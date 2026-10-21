@@ -1,0 +1,91 @@
+<!doctype html><html lang="fr"><head>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/theme.css" />
+<script src="assets/site.js" data-project="loisirs/monde-ouvert/index.html"></script>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Monde Ouvert</title>
+<meta name="description" content="Monde ouvert 3D : ville, campagne, forêt, montagnes, désert et île. Change de véhicule avec la roue (Tab) : voitures, motos, trottinettes, hélicoptères, avions, drone.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css?v=1">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/",
+  "three-mesh-bvh": "https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.7.6/build/index.module.js"
+} }
+</script>
+</head><body>
+<canvas id="c"></canvas>
+
+<div id="hud">
+  <div id="topleft">
+    <div id="clockbox" class="panel"><span id="clockicon">☀️</span> <b id="clock">10:30</b></div>
+    <div id="vbox" class="panel"><small id="vcat">Voitures</small><b id="vname">Tesla Roadster</b></div>
+    <div id="scorebox" class="panel"><small>Score</small><b id="scoreval">0</b></div>
+  </div>
+  <div id="zone"></div>
+  <canvas id="mini" width="210" height="210" aria-label="Minicarte"></canvas>
+  <div id="speedbox" class="panel">
+    <div class="big"><b id="spd">0</b><span>km/h</span></div>
+    <div id="spdx"></div>
+    <div id="gauge" hidden><span id="gaugel"></span><div class="bar"><i id="gaugef"></i></div></div>
+  </div>
+  <div id="msg" role="status"></div>
+  <div id="trick"><div id="tricktitle"></div><div id="tricksub"></div></div>
+  <div id="drift"></div>
+  <div id="hint" class="panel"><kbd>Tab</kbd> véhicules · <kbd>M</kbd> carte · <kbd>H</kbd> aide</div>
+  <div id="help" class="panel hide">
+    <h3>Commandes du véhicule</h3>
+    <div class="grid" id="helpgrid"></div>
+    <h3 class="g">Général</h3>
+    <div class="grid">
+      <span><kbd>Tab</kbd> (maintenir)</span><span>Roue des véhicules : survole une catégorie puis un véhicule, relâche Tab</span>
+      <span><kbd>C</kbd></span><span>Changer de caméra · clic gauche + glisser pour tourner autour</span>
+      <span><kbd>R</kbd></span><span>Remettre le véhicule d'aplomb</span>
+      <span><kbd>M</kbd></span><span>Carte (clic sur la carte : téléportation)</span>
+      <span><kbd>N</kbd> · <kbd>T</kbd></span><span>Avancer de 6 h · accélérer le temps (maintenir)</span>
+      <span><kbd>X</kbd> · <kbd>P</kbd></span><span>Qualité graphique · son</span>
+      <span><kbd>Échap</kbd></span><span>Pause</span>
+    </div>
+  </div>
+  <div id="btns"><button id="wheelbtn" class="ghost" aria-label="Choisir un véhicule">Véhicules</button><button id="mapbtn" class="ghost" aria-label="Ouvrir la carte">Carte</button></div>
+</div>
+
+<div id="wheel" aria-label="Roue de sélection des véhicules">
+  <svg></svg>
+  <div class="wcenter"></div>
+  <div class="wcards"></div>
+</div>
+
+<div id="bigmap" hidden><div class="in"><canvas id="bigmapc"></canvas><p>Clic sur la carte pour t'y téléporter · <kbd>M</kbd> ou <kbd>Échap</kbd> pour fermer</p></div></div>
+
+<div id="menu">
+  <div class="in">
+    <div class="kicker">Monde ouvert 3D</div>
+    <h1>Monde <span>Ouvert</span></h1>
+    <p class="lead">Une île de 8 km avec une ville, un aéroport, la campagne et son lac, une forêt, un désert, des montagnes et une île reliée par un pont. Tous mes simulateurs réunis : voitures, motos, trottinettes, hélicoptères, avions et drone.</p>
+    <div class="wheelhint">
+      <div class="disc"><kbd>Tab</kbd></div>
+      <div><b>Maintiens Tab</b> pour ouvrir la roue des véhicules. Survole une catégorie : ses véhicules apparaissent autour. Survole celui que tu veux et relâche Tab, il apparaît là où tu es.</div>
+    </div>
+    <div class="row">
+      <div class="keys">
+        <div><kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> conduire / piloter</div>
+        <div><kbd>C</kbd> caméra · <kbd>R</kbd> d'aplomb · <kbd>M</kbd> carte</div>
+        <div><kbd>H</kbd> commandes du véhicule · <kbd>Échap</kbd> pause</div>
+      </div>
+      <div class="block"><button id="qbtn" class="ghost">Qualité : haute</button></div>
+    </div>
+    <button id="go">Démarrer</button>
+  </div>
+</div>
+
+<div id="loading"><div class="spin"></div><div id="loadmsg">Chargement de Three.js…</div></div>
+<script>
+  addEventListener('error', e => { const m = document.getElementById('loadmsg'); if (m && !document.getElementById('loading').classList.contains('hide')) m.textContent = 'Erreur : ' + (e.message || e) + ' — vérifiez la connexion internet (Three.js est chargé depuis un CDN) et que WebGL est activé.'; });
+  addEventListener('unhandledrejection', e => { const m = document.getElementById('loadmsg'); if (m) m.textContent = 'Erreur : ' + (e.reason && e.reason.message || e.reason); console.error(e.reason); });
+</script>
+<script type="module" src="js/main.js?v=1"></script>
+</body></html>
