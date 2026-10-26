@@ -1,4 +1,4 @@
-/* Repris de simulateur-avion/js/main.js (F-35B et PV-40), adapté en module (three r165). */
+/* Repris de sky-pilot/js/main.js (F-35B et PV-40), adapté en module (three r165). */
 export function createAircraftModels(THREE, RK){
 const clamp=(x,a,b)=>x<a?a:x>b?b:x;
 function buildF35(){

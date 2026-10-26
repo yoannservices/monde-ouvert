@@ -1,4 +1,4 @@
-/* Deux-roues : superbike (Simulateur Moto), Kukirin G6 (trottinette électrique), trottinette freestyle.
+/* Deux-roues : superbike (Moto Rider), Kukirin G6 (trottinette électrique), trottinette freestyle.
    Les modèles d'origine regardent vers +Z : ils sont retournés dans un groupe pour regarder vers -Z. */
 import * as THREE from 'three';
 import { clamp, lerp, wrapPi, TAU } from '../util.js';

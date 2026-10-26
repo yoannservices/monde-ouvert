@@ -1,4 +1,4 @@
-/* Repris de simulateur-moto/js/main.js (superbikes), adapté en module (three r165). */
+/* Repris de moto-rider/js/main.js (superbikes), adapté en module (three r165). */
 export function createMotoModel(THREE, RK){
 const clamp=(x,a,b)=>x<a?a:x>b?b:x;
 const BIKES=[

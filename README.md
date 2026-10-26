@@ -13,7 +13,7 @@ Maintiens **Tab** : la roue s'ouvre et le temps ralentit. Survole une catégorie
 | Catégorie | Véhicules |
 |---|---|
 | Voitures | Tesla Roadster (roule sur les murs et les plafonds, propulseurs, boost, figures), supercar V12 (nouveau), voiture de drift (Drift King) |
-| Deux-roues | Ducati Panigale V4 R (Simulateur Moto), Kukirin G6 (dérapage, wheelie), trottinette freestyle (flips, tailwhips, barspins) |
+| Deux-roues | Ducati Panigale V4 R (Moto Rider), Kukirin G6 (dérapage, wheelie), trottinette freestyle (flips, tailwhips, barspins) |
 | Hélicoptères | Colibri (léger, 2 places), Atlas (transport, 2 pilotes + 12 places à l'arrière, vue cabine) |
 | Avions | F-35B (décollage vertical, post-combustion), PV-40 (aile basculante) |
 | Drones | Drone FPV 5" (modes Angle et Acro) |

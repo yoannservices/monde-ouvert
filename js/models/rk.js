@@ -1,4 +1,4 @@
-/* Repris de simulateur-moto/js/main.js, adapté en module (three r165). */
+/* Repris de moto-rider/js/main.js, adapté en module (three r165). */
 export function createRK(THREE){
 return (()=>{
 const TAU=Math.PI*2,Y=new THREE.Vector3(0,1,0);

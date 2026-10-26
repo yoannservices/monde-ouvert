@@ -217,7 +217,7 @@ export function createExtraModels(THREE, RK) {
     return { root, body, main, tail, mats: { paint }, cockpit: V(0.55, Y0 + 0.65, -6.85), cabin: V(-1.05, Y0 + 0.55, 0.15) };
   }
 
-  /* ---------- drone FPV 5" (Simulateur FPV) ---------- */
+  /* ---------- drone FPV 5" (FPV Racer) ---------- */
   function buildDrone() {
     const root = new THREE.Group(), inner = new THREE.Group(); root.add(inner);
     const carbon = M.std(0x1d1d1f, 0.5, 0.3, { map: RK.carbonTex() });

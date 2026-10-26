@@ -1,4 +1,4 @@
-/* Drone FPV 5" : modèle de vol du Simulateur FPV (moteurs à retard, poussée selon l'air entrant,
+/* Drone FPV 5" : modèle de vol du FPV Racer (moteurs à retard, poussée selon l'air entrant,
    traînée anisotrope, propwash), en mode Angle (assisté) ou Acro. */
 import * as THREE from 'three';
 import { clamp, lerp } from '../util.js';

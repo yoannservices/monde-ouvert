@@ -22,7 +22,7 @@ export const CATS = [
     { id: 'drift', name: 'Voiture de drift', desc: 'Propulsion survireuse de Drift King : gaz et contre-braquage.' },
   ] },
   { id: 'bike', name: 'Deux-roues', icon: 'bike', items: [
-    { id: 'moto', name: 'Ducati Panigale V4 R', desc: 'Superbike de 240 ch du Simulateur Moto, boîte automatique.' },
+    { id: 'moto', name: 'Ducati Panigale V4 R', desc: 'Superbike de 240 ch du Moto Rider, boîte automatique.' },
     { id: 'kukirin', name: 'Kukirin G6', desc: 'Trottinette électrique de 120 km/h : dérapages et wheelies.' },
     { id: 'freestyle', name: 'Trottinette freestyle', desc: 'Sauts, flips, tailwhips, barspins et grabs.' },
   ] },
@@ -35,7 +35,7 @@ export const CATS = [
     { id: 'pv40', name: 'PV-40', desc: 'VTOL privé à aile basculante et 4 turbopropulseurs.' },
   ] },
   { id: 'drone', name: 'Drones', icon: 'drone', items: [
-    { id: 'drone', name: 'Drone FPV 5"', desc: 'Freestyle 6S du Simulateur FPV : vue caméra, mode Angle ou Acro.' },
+    { id: 'drone', name: 'Drone FPV 5"', desc: 'Freestyle 6S du FPV Racer : vue caméra, mode Angle ou Acro.' },
   ] },
 ];
 

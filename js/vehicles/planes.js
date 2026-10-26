@@ -1,5 +1,5 @@
 /* Avions : F-35B (STOVL, tuyère orientable, post-combustion) et PV-40 (aile basculante).
-   Modèle de vol repris du Simulateur Avion (portance, traînée, décrochage, poussée vectorielle, pilotage assisté). */
+   Modèle de vol repris du Sky Pilot (portance, traînée, décrochage, poussée vectorielle, pilotage assisté). */
 import * as THREE from 'three';
 import { clamp, lerp, sstep, approach } from '../util.js';
 import { G as GRAV, V3, Q, UP } from './base.js';
