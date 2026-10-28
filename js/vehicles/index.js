@@ -8,6 +8,7 @@ import { createMotoModel } from '../models/moto.js';
 import { createKukirinModel } from '../models/kukirin.js';
 import { createFreestyleModel } from '../models/freestyle.js';
 import { createAircraftModels } from '../models/avions.js';
+import { createCockpitKit } from '../models/cockpit.js';
 import { Car } from './cars.js';
 import { Tesla } from './tesla.js';
 import { Moto, Kukirin, Freestyle } from './bikes.js';
@@ -76,19 +77,21 @@ function optimizeModel(root) {
 export function createRoster(ctx, renderer) {
   const RK = createRK(THREE);
   RK.setEnv(renderer, { city: 0.6, hills: 1.2, sunU: 0.3, sunV: 0.25 });
-  const X = createExtraModels(THREE, RK);
+  const X = createExtraModels(THREE, RK), K = createCockpitKit(THREE);
+  // habitacle d'un modèle : instruments redessinés par main.js quand la caméra est en vue intérieure
+  const fit = (m, ck) => { m.root.userData.cockpit = ck; return m; };
   let moto = null, kuk = null, rider = null, air = null;
   const makers = {
     tesla: () => new Tesla(ctx, buildRoadster(THREE)),
-    super: () => new Car(ctx, 'super', X.buildSupercar()),
-    drift: () => new Car(ctx, 'drift', X.buildDriftCar()),
+    super: () => { const m = X.buildSupercar(); return new Car(ctx, 'super', fit(m, K.carInterior(m.body || m.root, m.cockpit))); },
+    drift: () => { const m = X.buildDriftCar(); return new Car(ctx, 'drift', fit(m, K.carInterior(m.body || m.root, m.cockpit))); },
     moto: () => new Moto(ctx, moto || (moto = createMotoModel(THREE, RK)), 1),
     kukirin: () => new Kukirin(ctx, kuk || (kuk = createKukirinModel(THREE, RK))),
     freestyle: () => new Freestyle(ctx, rider || (rider = createFreestyleModel(THREE))),
-    heli_small: () => new Heli(ctx, 'small', X.buildHeliSmall()),
-    heli_big: () => new Heli(ctx, 'big', X.buildHeliBig()),
-    f35: () => new Plane(ctx, 'f35', (air || (air = createAircraftModels(THREE, RK))).buildF35()),
-    pv40: () => new Plane(ctx, 'pv40', (air || (air = createAircraftModels(THREE, RK))).buildPV40()),
+    heli_small: () => { const m = X.buildHeliSmall(); return new Heli(ctx, 'small', fit(m, K.heliInterior(m.body || m.root, m.cockpit, { width: 1.1 }))); },
+    heli_big: () => { const m = X.buildHeliBig(); return new Heli(ctx, 'big', fit(m, K.heliInterior(m.body || m.root, m.cockpit, { width: 1.8 }))); },
+    f35: () => { const m = (air || (air = createAircraftModels(THREE, RK))).buildF35(); return new Plane(ctx, 'f35', fit(m, K.planeInterior(m.root, new THREE.Vector3(0, 1.03, -2.48), { width: 0.95 }))); },
+    pv40: () => { const m = (air || (air = createAircraftModels(THREE, RK))).buildPV40(); return new Plane(ctx, 'pv40', fit(m, K.planeInterior(m.root, new THREE.Vector3(-0.62, 1.12, -13.6), { width: 1.3, screenW: 0.3 }))); },
     drone: () => new Drone(ctx, X.buildDrone()),
   };
   const cache = {}, info = {};

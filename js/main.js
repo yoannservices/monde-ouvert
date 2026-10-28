@@ -214,6 +214,20 @@ canvas.addEventListener('pointerdown', e => { if (e.button === 0 && !wheel.isOpe
 canvas.addEventListener('pointermove', e => { if (!orb.drag) return; orb.yaw -= (e.clientX - orb.lx) * 0.006; orb.pitch = clamp(orb.pitch + (e.clientY - orb.ly) * 0.005, -0.45, 1.2); orb.lx = e.clientX; orb.ly = e.clientY; orb.idle = 0; });
 const orbEnd = () => { orb.drag = false; orb.idle = 0; };
 canvas.addEventListener('pointerup', orbEnd); canvas.addEventListener('pointercancel', orbEnd);
+/* instruments de l'habitacle : mis à jour seulement en vue intérieure (type 'attach') */
+const _cq = new THREE.Quaternion();
+function updateCockpit() {
+  const ud = cur.m && cur.m.userData, fp = cur.cams[camMode % cur.cams.length].type === 'attach';
+  if (ud && ud.rider && ud.displayMesh) { ud.rider.visible = !fp; ud.displayMesh.visible = fp; } // trottinette en vue pilote : on cache le pilote, on montre le compteur
+  const ck = cur.root.userData.cockpit; if (!ck || cur.cams[camMode % cur.cams.length].type !== 'attach') return;
+  const q = cur.root.quaternion, f = _f.set(0, 0, -1).applyQuaternion(q), r = _u.set(1, 0, 0).applyQuaternion(q), up = _t.set(0, 1, 0).applyQuaternion(q);
+  const kmh = cur.vel.length() * 3.6, ground = world.groundAt(cur.pos.x, cur.pos.z, cur.pos.y);
+  const rpmGear = kmh < 2 ? 0.12 : 0.25 + 0.7 * ((kmh % 48) / 48);
+  ck.update({
+    kmh, rpm: rpmGear, alt: cur.pos.y - ground, vs: cur.vel.y, pitch: Math.asin(clamp(f.y, -1, 1)), bank: Math.atan2(-r.y, up.y), hdg: ((Math.atan2(f.x, -f.z) * 180 / Math.PI) + 360) % 360,
+    mach: kmh / 3.6 / 340, thr: cur.thr ?? cur.S?.thr ?? (cur.coll ?? 0), g: 1, rotor: cur.rpm ?? 1, coll: cur.coll ?? 0, lights: !!cur.lightsForced || !!cur.lightsOn, boost: !!cur.boosting, brake: false, gear: cur.gear ?? false,
+  });
+}
 function updateCamera(dt) {
   const v = cur, cams = v.cams, c = cams[camMode % cams.length], root = v.root, q = root.quaternion;
   const sp = v.vel.length();
@@ -359,7 +373,7 @@ function frame(now) {
     const a = now / 9000, p = cur.root.position;
     camera.position.set(p.x + Math.sin(a) * 9, p.y + 3, p.z + Math.cos(a) * 9); camera.up.set(0, 1, 0); camera.lookAt(p.x, p.y + 0.8, p.z);
     camera.fov = 50; camera.updateProjectionMatrix();
-  } else updateCamera(rdt);
+  } else { updateCockpit(); updateCamera(rdt); }
   updateDayNight(paused ? 0 : dt, cur.pos, camera.position.y - world.heightAt(camera.position.x, camera.position.z));
   world.update(dt, camera.position, scene.fog.far);
   // l'interface (DOM, minicarte) est rafraîchie 15 fois par seconde, pas à chaque image
@@ -397,3 +411,4 @@ function adaptResolution(dt) {
 $('loading').classList.add('hide');
 requestAnimationFrame(frame);
 window.__monde = { get rising() { return rising; }, world, roster, K, keys, scene, camera, renderer, get cur() { return cur; }, switchVehicle, setTime: h => { timeOfDay = h; } };
+

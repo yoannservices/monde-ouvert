@@ -27,7 +27,7 @@ export class Plane {
     this.cams = [
       { name: 'Poursuite', type: 'chase', dist: A.cam.dist, h: A.cam.h, look: 1.5, flat: false, follow: 'vel', stiff: 6, roll: 0.5, speedPull: 0.4 },
       { name: 'Éloignée', type: 'chase', dist: A.cam.dist * 2, h: A.cam.h * 2, look: 2, flat: false, follow: 'vel', stiff: 4 },
-      { name: 'Cockpit', type: 'attach', off: new V3(...A.cockpit).add(new V3(0, 0.12, 0)), near: 0.1 },
+      { name: 'Cockpit', type: 'attach', off: new V3(...A.cockpit).add(new V3(0, this.pv ? -0.06 : 0.12, 0)), near: 0.1 },
     ];
     this.help = [['Maj / Ctrl', 'Poussée + / − (Maj à 100 % : post-combustion)'], ['Z / S', 'Cabrer / piquer'], ['Q / D', 'Roulis gauche / droite'], ['A / E', 'Palonnier'],
       ['T', this.pv ? 'Basculer l\'aile vers 30°, 60°, 90°' : 'Tuyère verticale / horizontale (décollage vertical)'], ...(this.pv ? [['Y', 'Rabaisser l\'aile'], ['B', 'Freins VTOL'], ['O', 'Portes et rampe arrière']] : []),

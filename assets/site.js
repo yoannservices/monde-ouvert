@@ -4,6 +4,22 @@
    projet précédent/suivant, menu de tous les projets) et
    mémorise les projets récemment ouverts pour le hub.
    ═══════════════════════════════════════════════════════════ */
+
+/* Clavier AZERTY : la lettre M est sur la position physique "Semicolon" (code KeyM = la touche virgule). Les jeux lisent event.code,
+   on relaie donc la lettre m comme KeyM et on ignore la touche virgule qui porte ce code. */
+(function () {
+  const skip = (e) => !e.isTrusted || e.ctrlKey || e.altKey || e.metaKey || /^(INPUT|TEXTAREA|SELECT)$/.test((e.target || {}).tagName) || (e.target && e.target.isContentEditable);
+  const fix = (e) => {
+    if (skip(e)) return;
+    const isM = e.key && e.key.toLowerCase() === 'm';
+    if (isM && e.code !== 'KeyM') {
+      e.stopImmediatePropagation(); e.preventDefault();
+      (e.target || window).dispatchEvent(new KeyboardEvent(e.type, { key: e.key, code: 'KeyM', repeat: e.repeat, shiftKey: e.shiftKey, bubbles: true, cancelable: true }));
+    } else if (!isM && e.code === 'KeyM') { e.stopImmediatePropagation(); }
+  };
+  addEventListener('keydown', fix, true); addEventListener('keyup', fix, true);
+})();
+
 (function () {
   'use strict';
 
@@ -35,10 +51,12 @@
     { cat: 'loisirs', path: 'loisirs/banc-essai-moteur/',   name: "Banc d'essai moteur",          desc: "Banc d'essai moteur, boîte et pédales" },
     { cat: 'loisirs', path: 'loisirs/drift-king/', mini: true,      name: 'Drift King',             desc: 'Drift sur une route de montagne' },
     { cat: 'loisirs', path: 'loisirs/drift-zone/', mini: true,      name: 'Drift Zone',             desc: 'Drift sur une grande plateforme 3D : combos, frôlements, 2 minutes' },
-    { cat: 'loisirs', path: 'loisirs/sky-pilot/', mini: true, pos: 'tr',name: 'Sky Pilot',       desc: 'F-35B et PV-40 à aile basculante, vol libre' },
+    { cat: 'loisirs', path: 'loisirs/bus-city-simulator/', mini: true, pos: 'tr', name: 'Bus City Simulator', desc: 'Simulateur de bus urbain : 5 bus, ville, lignes, horaires, économie et météo' },
+    { cat: 'loisirs', path: 'loisirs/sky-pilot/', mini: true, pos: 'tr',name: 'Sky Pilot',      desc: 'F-35B et PV-40 à aile basculante, vol libre' },
     { cat: 'loisirs', path: 'loisirs/moto-rider/', mini: true, name: 'Moto Rider',        desc: 'Moto sur route de col' },
     { cat: 'loisirs', path: 'loisirs/tesla-roadster/', mini: true, name: 'Tesla Roadster',  desc: 'Roadster 3D : murs, plafonds, vol, boost et tonneaux en ville' },
     { cat: 'loisirs', path: 'loisirs/monde-ouvert/', mini: true, name: 'Monde Ouvert',  desc: 'Île 3D : 11 véhicules à choisir avec la roue (Tab)' },
+    { cat: 'loisirs', path: 'loisirs/steep-peaks/', mini: true, name: 'Steep Peaks', desc: 'Snowboard, ski et wingsuit en monde ouvert de montagne' },
     { cat: 'loisirs', path: 'loisirs/kukirin/', mini: true,         name: 'Kukirin',                desc: 'Trottinette, livraisons et quêtes' },
     { cat: 'loisirs', path: 'loisirs/trottinette-freestyle/', mini: true, name: 'Trottinette Freestyle', desc: 'Skatepark 3D : whips, barspins, flips et grinds' },
     { cat: 'loisirs', path: 'loisirs/rail-express/', mini: true, name: 'Rail Express',      desc: 'Conduite ferroviaire : signalisation, gares et procédures' },

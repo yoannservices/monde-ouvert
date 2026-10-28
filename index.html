@@ -12,11 +12,12 @@
 <link rel="stylesheet" href="style.css?v=1">
 <script type="importmap">
 { "imports": {
-  "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
-  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/",
+  "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/",
   "three-mesh-bvh": "https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.7.6/build/index.module.js"
 } }
 </script>
+<script type="module">import { patch } from "assets/perf.js"; import * as T from "three"; patch(T);</script>
 </head><body>
 <canvas id="c"></canvas>
 
