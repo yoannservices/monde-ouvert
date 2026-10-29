@@ -209,6 +209,8 @@ export class Plane {
     } else {
       const PV = m.PV, vt = Math.sin(S.tilt);
       PV.tilt.rotation.x = S.tilt;
+      // nacelles du vrai modèle (posé à 90°) : bascule autour de l'axe d'aile, rotors contrarotatifs
+      for (const k of this.nac || []) { k.n.rotation.x = S.tilt - Math.PI / 2; if (k.r) k.r.rotation.z = S.propAng * k.dir; }
       const om = S.thr > 0.02 ? 16 + 42 * S.thr : Math.min(S.aspd * 0.35, 22);
       S.propAng += om * dt;
       const ds = 1 + 0.2 * vt;

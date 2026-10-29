@@ -74,6 +74,30 @@ function optimizeModel(root) {
   }
 }
 
+/* Vrais modèles (Sketchfab, CC-BY, auteurs dans README) à la place des modèles procéduraux (supprimés au chargement). Avant du jeu = -Z.
+   len : longueur (m) ; yaw : tourne les modèles dont l'avant regarde +Z ; keep : objets à garder visibles (pilote) ; parent : où ajouter le modèle. */
+const PI = Math.PI;
+const REAL = {
+  tesla: { file: 'tesla-roadster', len: 4.3 },
+  super: { file: 'ferrari', len: 4.5 },
+  drift: { file: 'rally-subaru-impreza', len: 4.35, yaw: PI },
+  f35: { file: 'f35', len: 15.5, yaw: PI, axes: true, y: 0.9 },
+  pv40: { file: 'v22-osprey-tilt', len: 33, axes: true, y: 1.5 },
+  drone: { file: 'fpv-drone', len: 0.6, y: -0.15 },
+  heli_small: { file: 'petit helico', len: 11.86, yaw: PI, keep: (v) => [v.m.main.rot, v.m.main.disc, v.m.tail.rot, v.m.tail.disc], parent: (v) => v.m.body },
+  heli_big: { file: 'gros helico', len: 16.59, yaw: PI, keep: (v) => [v.m.main.rot, v.m.main.disc, v.m.tail.rot, v.m.tail.disc], parent: (v) => v.m.body },
+  moto: { file: 'yamaha-r1', len: 2.05, keep: (v) => [v.m.rider], parent: (v) => v.m.inner },
+  kukirin: { file: 'tier-scooter', len: 1.3, keep: (v) => [v.m.userData.rider, v.m.userData.displayMesh], parent: (v) => v.m.userData.tilt },
+};
+function realize(v, id) {
+  const r = REAL[id]; if (!r) return;
+  import('../../../../assets/glb.js').then(async (m) => {
+    const f = m.fitGLB(await m.loadGLB(new URL(`../../../../assets/models/${r.file}.glb`, import.meta.url).href), r.len, r.yaw || 0, !!r.axes);
+    m.purge(v.root, r.keep ? r.keep(v) : []); f.position.y += r.y || 0; (r.parent ? r.parent(v) : v.root).add(f);
+    if (id === 'pv40') { v.nac = []; f.traverse((o) => { if (/^nacelle_/.test(o.name)) v.nac.push({ n: o, r: o.children.find((c) => /^rotor_/.test(c.name)), dir: o.name.endsWith('L') ? 1 : -1 }); }); }
+  }).catch((e) => console.warn('Modèle réel non chargé', id, e));
+}
+
 export function createRoster(ctx, renderer) {
   const RK = createRK(THREE);
   RK.setEnv(renderer, { city: 0.6, hills: 1.2, sunU: 0.3, sunV: 0.25 });
@@ -100,7 +124,7 @@ export function createRoster(ctx, renderer) {
     RK, info,
     ids: Object.keys(makers).filter(id => info[id]),
     get(id) {
-      if (!cache[id]) { const v = makers[id](); optimizeModel(v.root); v.id = id; v.name = info[id].name; v.cat = info[id].cat; cache[id] = v; }
+      if (!cache[id]) { const v = makers[id](); optimizeModel(v.root); realize(v, id); v.id = id; v.name = info[id].name; v.cat = info[id].cat; cache[id] = v; }
       return cache[id];
     },
   };

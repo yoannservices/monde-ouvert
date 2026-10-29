@@ -72,3 +72,7 @@ Il y a un cycle jour/nuit (fenêtres et lampadaires allumés la nuit). La carte 
   - `js/audio.js` : les sons synthétisés
 
 HTML, CSS et JavaScript, sans build. Three.js est chargé depuis un CDN.
+
+## Crédits des modèles 3D
+
+Véhicules réels sous licence CC-BY (Sketchfab) : auteurs et licences dans `assets/models/CREDITS.md`.

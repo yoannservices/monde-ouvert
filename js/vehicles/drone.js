@@ -22,9 +22,9 @@ export class Drone {
     this.st = { pos: new V3(), vel: new V3(), q: new Q(), w: new V3(), motor: 0, sp: new V3(), propwash: 0, grounded: false };
     this.kb = { thr: 0, yaw: 0, pitch: 0, roll: 0 }; this.mode = 'angle'; this.armed = true; this.propA = 0;
     this.cams = [
-      { name: 'Caméra FPV', type: 'attach', off: new V3(0, 0.02, -0.07), near: 0.02, tilt: 25 * D2R, fov: 105 },
-      { name: 'Poursuite', type: 'chase', dist: 1.6, h: 0.5, look: 0.05, stiff: 8, near: 0.03 },
-      { name: 'Éloignée', type: 'chase', dist: 5, h: 1.6, look: 0.1, stiff: 5, near: 0.03 },
+      { name: 'Caméra FPV', type: 'attach', off: new V3(0, 0.01, -0.09), near: 0.02, tilt: 25 * D2R, fov: 100 },
+      { name: 'Poursuite', type: 'chase', dist: 0.95, h: 0.32, look: 0.05, stiff: 8, near: 0.03 },
+      { name: 'Éloignée', type: 'chase', dist: 2.8, h: 0.9, look: 0.1, stiff: 5, near: 0.03 },
     ];
     this.help = [['Z / S', 'Gaz (augmenter / diminuer)'], ['Q / D', 'Lacet (pivoter)'], ['↑ / ↓', 'Tangage (avancer / reculer)'], ['← / →', 'Roulis'],
       ['V', 'Mode Angle (assisté) / Acro'], ['Maj + S', 'Couper les gaz'], ['C', 'Caméra FPV / poursuite']];
