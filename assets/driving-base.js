@@ -148,10 +148,6 @@
       const rider = window.__trott?.st;
       return rider && { x: rider.pos.x, z: rider.pos.z, heading: rider.heading };
     }
-    if (loader.dataset.driving === 'truck-france-simulator') {
-      const phys = window.__game?.phys;
-      return phys && { x: phys.x, z: phys.z, heading: phys.th };
-    }
     return null;
   };
   window.DrivingBase = { update, get state() { return state; } };

@@ -62,7 +62,6 @@
     { cat: 'loisirs', path: 'loisirs/rally-masters/', mini: true, name: 'Rally Masters', desc: 'Rallye avec copilote : spéciales par graine, surfaces, météo, dégâts, championnat' },
     { cat: 'loisirs', path: 'loisirs/rail-express/', mini: true, name: 'Rail Express',      desc: 'Conduite ferroviaire : signalisation, gares et procédures' },
     { cat: 'loisirs', path: 'loisirs/fpv-racer/', mini: true, name: 'FPV Racer',  desc: 'Drone FPV acro : tunnels, bando, course et suivi de voitures en drift' },
-    { cat: 'loisirs', path: 'loisirs/truck-france-simulator/', mini: true, name: 'Truck France Simulator', desc: 'Camion en France : contrats, carte, météo, trafic et stations' },
     { cat: 'loisirs', path: 'loisirs/apex-gp/',             name: 'Apex GP',                desc: 'Simulation de F1 : 4 circuits, 19 bots, météo, stands, radio' },
     { cat: 'outils',  path: 'outils/sport-live/',     name: 'Sport Live',            desc: 'Scores en direct, compos, stats et simulation 3D' },
     { cat: 'outils',  path: 'outils/music-player/',   name: 'Music Player',           desc: 'Lecteur audio & playlists' },

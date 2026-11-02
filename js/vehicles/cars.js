@@ -7,11 +7,13 @@ import { G, V3, Q, UP, GroundBody, groundQuat, yawOf, ease, AirTricks } from './
 const SPECS = {
   tesla: { acc: 18, vmax: 75, brake: 32, rev: 11, vrev: 20, grip: 34, loose: 0.12, steerYaw: 2.4, handbrake: false, boost: true, thrusters: true, wb: 2.62, track: 1.72, sound: 'electric' },
   drift: { acc: 22, vmax: 58, brake: 30, rev: 10, vrev: 15, grip: 24, loose: 0.62, steerYaw: 2.9, handbrake: true, wb: 2.65, track: 1.84, sound: 'car', drift: true },
+  f1: { acc: 34, vmax: 98, brake: 60, rev: 8, vrev: 12, grip: 52, loose: 0.08, steerYaw: 2.0, handbrake: false, wb: 3.4, track: 1.6, sound: 'v12', drift: false },
   super: { acc: 25, vmax: 96, brake: 38, rev: 10, vrev: 18, grip: 36, loose: 0.22, steerYaw: 2.3, handbrake: true, wb: 2.8, track: 1.75, sound: 'v12', drift: true },
 };
 const PAINTS = {
   tesla: [['Rouge multicouche', 0x9a0a10], ['Blanc nacré', 0xe8e8e6], ['Noir intense', 0x07080a], ['Argent vif', 0x8f949b], ['Bleu outremer', 0x0f2a6b], ['Vert néon', 0x1f8a3c]],
   drift: [['Turquoise', 0x1fb5b0], ['Orange', 0xf06a1a], ['Blanc', 0xe9e9e6], ['Violet', 0x6a2bbf], ['Noir', 0x111214]],
+  f1: [["Livrée d'origine", 0x0a5c4a]],
   super: [['Jaune Modena', 0xf2b705], ['Rouge course', 0xc0101a], ['Vert lime', 0x7ccf1a], ['Gris titane', 0x5c6168], ['Bleu électrique', 0x1a4fd6], ['Blanc', 0xeeeeea]],
 };
 const _f = new V3(), _l = new V3(), _t = new V3(), _n = new V3(), _q = new Q(), _q2 = new Q(), _up = new V3();

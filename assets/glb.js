@@ -104,3 +104,34 @@ export function pivotAt(wrap, pos, meshes) {
   for (const m of meshes) p.attach(m);
   return p;
 }
+
+/* Articulations des avions réels en un bloc (F-35, V-22) : train et tuyère découpés en pièces mobiles, repère monde, avant = -Z.
+   `wrap` : groupe à l'identité qui contient le modèle cadré. Renvoie { gear: [{ g, ax, ang, lift }], nozR } ;
+   le jeu applique `g.rotation[ax] = ang * rentré` (rentré 0 = sorti, 1 = rentré) et `nozR.rotation.x = tuyère * π/2`. */
+export const AIRCRAFT_RIGS = {
+  f35(wrap) {
+    const near = (o, re) => re.test(o.parent.name);
+    const C = carve(wrap, (o, c) => {
+      if (near(o, /^(Cylinder010_9|Plane02[0-9]_\d+|Plane03[0-2]_\d+)$/) && Math.abs(c.x) > 1.7 && Math.abs(c.x) < 2.7 && c.y < 2) return c.x < 0 ? 'L' : 'R';
+      if (near(o, /^Cylinder042_16$/)) {
+        if (Math.abs(c.x) < 0.5 && c.z < -4 && c.z > -5 && c.y < 1.1) return 'N';
+        if (/^Object_5[0-3]$/.test(o.name)) return 'T';
+      }
+    });
+    const gear = [], P = (x, y, z, k) => pivotAt(wrap, new THREE.Vector3(x, y, z), C[k]);
+    for (const s of [-1, 1]) { const k = s < 0 ? 'L' : 'R'; if (C[k]) gear.push({ g: P(s * 2.2, 1.9, 2.2, k), ax: 'z', ang: s * -Math.PI / 2 }); }
+    if (C.N) gear.push({ g: P(0, 0.95, -4.5, 'N'), ax: 'x', ang: -Math.PI / 2 });
+    return { gear, nozR: C.T ? P(0, 1.9, 5, 'T') : null };
+  },
+  pv40(wrap) {
+    const C = carve(wrap, (o, c) => {
+      if (o.name !== 'Object_4' || c.y > 1.3) return;
+      if (Math.abs(c.x) > 2.8 && Math.abs(c.x) < 4.6 && c.z > 1.4 && c.z < 3.7) return c.x < 0 ? 'L' : 'R';
+      if (Math.abs(c.x) < 1 && c.z < -8.8 && c.z > -11.4) return 'N';
+    });
+    const gear = [], P = (x, y, z, k) => pivotAt(wrap, new THREE.Vector3(x, y, z), C[k]);
+    for (const s of [-1, 1]) { const k = s < 0 ? 'L' : 'R'; if (C[k]) gear.push({ g: P(s * 3.7, 1.3, 2.5, k), ax: 'z', ang: s * -Math.PI / 2, lift: 0.5 }); }
+    if (C.N) gear.push({ g: P(0, 1.3, -10, 'N'), ax: 'x', ang: -Math.PI / 2, lift: 0.3 });
+    return { gear, nozR: null };
+  },
+};
