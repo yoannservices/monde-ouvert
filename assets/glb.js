@@ -65,3 +65,42 @@ export function fitGLB(model, length, yaw = 0, keepAxes = false) {
   const out = new THREE.Group(); out.add(holder); out.rotation.y = yaw;
   return out;
 }
+
+/* Découpe les triangles de `root` choisis par `pick(maillage, centre)` (centre en repère monde, `root` hors scène) pour animer
+   train, tuyère... d'un modèle d'un seul bloc. `pick` renvoie une clé (ou rien) ; renvoie { clé: [nouveaux maillages] }. */
+export function carve(root, pick) {
+  root.updateMatrixWorld(true);
+  const list = [], out = {}, v = new THREE.Vector3(), cen = new THREE.Vector3();
+  root.traverse((o) => { if (o.isMesh && o.geometry.attributes.position) list.push(o); });
+  for (const o of list) {
+    const g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry, pos = g.attributes.position, rows = {}, keep = [];
+    for (let i = 0; i < pos.count; i += 3) {
+      cen.set(0, 0, 0); for (let k = 0; k < 3; k++) cen.add(v.fromBufferAttribute(pos, i + k).applyMatrix4(o.matrixWorld)); cen.multiplyScalar(1 / 3);
+      const key = pick(o, cen); (key ? (rows[key] = rows[key] || []) : keep).push(i);
+    }
+    const sub = (ids) => {
+      const ng = new THREE.BufferGeometry();
+      for (const n in g.attributes) {
+        const a = g.attributes[n], s = a.itemSize, arr = new Float32Array(ids.length * 3 * s);
+        ids.forEach((r, j) => { for (let k = 0; k < 3; k++) for (let c = 0; c < s; c++) arr[(j * 3 + k) * s + c] = a.getComponent(r + k, c); });
+        ng.setAttribute(n, new THREE.BufferAttribute(arr, s));
+      }
+      return ng;
+    };
+    const keys = Object.keys(rows); if (!keys.length) continue;
+    for (const key of keys) {
+      const m = new THREE.Mesh(sub(rows[key]), o.material);
+      m.position.copy(o.position); m.quaternion.copy(o.quaternion); m.scale.copy(o.scale); o.parent.add(m); m.updateMatrixWorld(true);
+      (out[key] = out[key] || []).push(m);
+    }
+    if (keep.length) o.geometry = sub(keep); else o.parent.remove(o);
+  }
+  return out;
+}
+
+/* Groupe articulé en `pos` (repère monde) qui reprend `meshes` sans les déplacer ; `wrap` doit être à l'identité. */
+export function pivotAt(wrap, pos, meshes) {
+  const p = new THREE.Group(); p.position.copy(pos); wrap.add(p); wrap.updateMatrixWorld(true);
+  for (const m of meshes) p.attach(m);
+  return p;
+}

@@ -86,15 +86,45 @@ const REAL = {
   drone: { file: 'fpv-drone', len: 0.6, y: -0.15 },
   heli_small: { file: 'petit helico', len: 11.86, yaw: PI, keep: (v) => [v.m.main.rot, v.m.main.disc, v.m.tail.rot, v.m.tail.disc], parent: (v) => v.m.body },
   heli_big: { file: 'gros helico', len: 16.59, yaw: PI, keep: (v) => [v.m.main.rot, v.m.main.disc, v.m.tail.rot, v.m.tail.disc], parent: (v) => v.m.body },
-  moto: { file: 'yamaha-r1', len: 2.05, keep: (v) => [v.m.rider], parent: (v) => v.m.inner },
+  moto: { file: 'yamaha-r1', len: 2.05, yaw: PI, keep: (v) => [v.m.rider], parent: (v) => v.m.inner },
   kukirin: { file: 'tier-scooter', len: 1.3, keep: (v) => [v.m.userData.rider, v.m.userData.displayMesh], parent: (v) => v.m.userData.tilt },
+};
+
+/* Articulations des modèles d'avion en un bloc : triangles du train et de la tuyère découpés en pièces mobiles (repère monde, avant = -Z).
+   v.gear : [{ g, ax, ang, lift }] rentrés par planes.js ; v.nozR : tuyère du F-35. */
+export const RIGS = {
+  f35(m, wrap, v) {
+    const near = (o, re) => re.test(o.parent.name);
+    const C = m.carve(wrap, (o, c) => {
+      if (near(o, /^(Cylinder010_9|Plane02[0-9]_\d+|Plane03[0-2]_\d+)$/) && Math.abs(c.x) > 1.7 && Math.abs(c.x) < 2.7 && c.y < 2) return c.x < 0 ? 'L' : 'R';
+      if (near(o, /^Cylinder042_16$/)) {
+        if (Math.abs(c.x) < 0.5 && c.z < -4 && c.z > -5 && c.y < 1.1) return 'N';
+        if (/^Object_5[0-3]$/.test(o.name)) return 'T';
+      }
+    });
+    v.gear = [];
+    for (const s of [-1, 1]) if (C[s < 0 ? 'L' : 'R']) v.gear.push({ g: m.pivotAt(wrap, new THREE.Vector3(s * 2.2, 1.9, 2.2), C[s < 0 ? 'L' : 'R']), ax: 'z', ang: s * -Math.PI / 2 });
+    if (C.N) v.gear.push({ g: m.pivotAt(wrap, new THREE.Vector3(0, 0.95, -4.5), C.N), ax: 'x', ang: -Math.PI / 2 });
+    if (C.T) v.nozR = m.pivotAt(wrap, new THREE.Vector3(0, 1.9, 5), C.T);
+  },
+  pv40(m, wrap, v) {
+    const C = m.carve(wrap, (o, c) => {
+      if (o.name !== 'Object_4' || c.y > 1.3) return;
+      if (Math.abs(c.x) > 2.8 && Math.abs(c.x) < 4.6 && c.z > 1.4 && c.z < 3.7) return c.x < 0 ? 'L' : 'R';
+      if (Math.abs(c.x) < 1 && c.z < -8.8 && c.z > -11.4) return 'N';
+    });
+    v.gear = [];
+    for (const s of [-1, 1]) if (C[s < 0 ? 'L' : 'R']) v.gear.push({ g: m.pivotAt(wrap, new THREE.Vector3(s * 3.7, 1.3, 2.5), C[s < 0 ? 'L' : 'R']), ax: 'z', ang: s * -Math.PI / 2, lift: 0.5 });
+    if (C.N) v.gear.push({ g: m.pivotAt(wrap, new THREE.Vector3(0, 1.3, -10), C.N), ax: 'x', ang: -Math.PI / 2, lift: 0.3 });
+  },
 };
 function realize(v, id) {
   const r = REAL[id]; if (!r) return;
   import('../../../../assets/glb.js').then(async (m) => {
     const f = m.fitGLB(await m.loadGLB(new URL(`../../../../assets/models/${r.file}.glb`, import.meta.url).href), r.len, r.yaw || 0, !!r.axes);
-    m.purge(v.root, r.keep ? r.keep(v) : []); f.position.y += r.y || 0; (r.parent ? r.parent(v) : v.root).add(f);
-    if (id === 'pv40') { v.nac = []; f.traverse((o) => { if (/^nacelle_/.test(o.name)) v.nac.push({ n: o, r: o.children.find((c) => /^rotor_/.test(c.name)), dir: o.name.endsWith('L') ? 1 : -1 }); }); }
+    const wrap = new THREE.Group(); wrap.add(f); (RIGS[id] || (() => {}))(m, wrap, v); wrap.position.y = r.y || 0;
+    m.purge(v.root, r.keep ? r.keep(v) : []); (r.parent ? r.parent(v) : v.root).add(wrap);
+    if (id === 'pv40') { v.nac = []; wrap.traverse((o) => { if (/^nacelle_/.test(o.name)) v.nac.push({ n: o, r: o.children.find((c) => /^rotor_/.test(c.name)), dir: o.name.endsWith('L') ? 1 : -1 }); }); }
   }).catch((e) => console.warn('Modèle réel non chargé', id, e));
 }
 

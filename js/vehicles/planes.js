@@ -200,6 +200,10 @@ export class Plane {
   visual(dt) {
     const S = this.S, m = this.m;
     this.root.position.copy(S.p); this.root.quaternion.copy(S.q);
+    // train et tuyère du vrai modèle (pièces découpées dans index.js)
+    const rt = 1 - smooth(0, 0.8, S.gearPos);
+    for (const k of this.gear || []) { if (k.y0 === undefined) k.y0 = k.g.position.y; k.g.rotation[k.ax] = k.ang * rt; k.g.position.y = k.y0 + (k.lift || 0) * rt; }
+    if (this.nozR) this.nozR.rotation.x = S.noz * Math.PI / 2;
     if (!this.pv) {
       m.nozG.rotation.x = S.noz * Math.PI / 2;
       for (const door of m.liftFanDoors) door.hinge.rotation.z = -door.side * clamp(S.noz, 0, 1) * 1.28;
