@@ -4,9 +4,12 @@ import * as THREE from 'three';
 
 const LOADERS = 'https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/loaders/';
 export async function loadGLB(url) {
-  const [{ GLTFLoader }, { DRACOLoader }] = await Promise.all([import(LOADERS + 'GLTFLoader.js'), import(LOADERS + 'DRACOLoader.js')]);
-  const draco = new DRACOLoader().setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
-  return (await new GLTFLoader().setDRACOLoader(draco).loadAsync(url)).scene;
+  const load = async () => {
+    const [{ GLTFLoader }, { DRACOLoader }] = await Promise.all([import(LOADERS + 'GLTFLoader.js'), import(LOADERS + 'DRACOLoader.js')]);
+    const draco = new DRACOLoader().setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+    return (await new GLTFLoader().setDRACOLoader(draco).loadAsync(url)).scene;
+  };
+  return window.GameLoader ? window.GameLoader.trackPromise('Modèle 3D ' + new URL(url, location.href).pathname.split('/').pop(), load()) : load();
 }
 
 /* Détecte les roues d'un modèle cadré par fitGLB (nœuds dont le nom contient « wheel ») et prépare leur rotation.

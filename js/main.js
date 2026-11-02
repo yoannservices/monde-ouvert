@@ -15,8 +15,7 @@ import { createAudio } from './audio.js';
 
 const $ = id => document.getElementById(id);
 const V3 = THREE.Vector3, Q = THREE.Quaternion;
-const loadMsg = $('loadmsg');
-const progress = t => { loadMsg.textContent = t; };
+const progress = t => window.GameLoader.stage(t);
 const tick = () => new Promise(r => setTimeout(r, 0));
 
 // ---------- rendu ----------
@@ -408,7 +407,7 @@ function adaptResolution(dt) {
   slowT = frameAvg > 26 && resScale <= 0.6 ? slowT + 1 : 0;
   if (slowT >= 4 && hiQ) { hiQ = false; applyQuality(); hud.toast('Qualité performance activée automatiquement (X pour changer)'); slowT = 0; }
 }
-$('loading').classList.add('hide');
 requestAnimationFrame(frame);
+window.GameLoader.ready();
 window.__monde = { get rising() { return rising; }, world, roster, K, keys, scene, camera, renderer, get cur() { return cur; }, switchVehicle, setTime: h => { timeOfDay = h; } };
 

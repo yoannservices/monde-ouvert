@@ -21,19 +21,19 @@ kbd{display:inline-block;min-width:1.5em;padding:1px 6px;margin:0 1px;border:1px
 #hud{position:fixed;inset:0;pointer-events:none;z-index:2}
 /* la barre de navigation du site occupe le haut de la page */
 body:has(> nav) #hud{top:56px}
-#topleft{position:absolute;top:max(14px,env(safe-area-inset-top));left:max(16px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+#topleft{position:absolute;top:calc(max(8px,env(safe-area-inset-top)) + 52px);left:max(16px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:8px;align-items:flex-start}
 #clockbox{padding:6px 12px;display:flex;gap:8px;align-items:center;font:600 15px var(--f-body)}
 #clockbox b{font:700 20px var(--f-disp);letter-spacing:.04em;font-variant-numeric:tabular-nums}
 #vbox{padding:8px 14px;display:flex;flex-direction:column}
 #vbox small,#scorebox small{font:600 11px var(--f-body);letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
 #vbox b{font:800 26px/1.05 var(--f-disp);letter-spacing:.03em;text-transform:uppercase}
-#scorebox{padding:6px 14px;display:flex;flex-direction:column}
+#scorebox{position:fixed;top:calc(max(8px,env(safe-area-inset-top)) + 46px);left:50%;transform:translateX(-50%);min-width:150px;align-items:center;padding:6px 14px;display:flex;flex-direction:column}
 #scorebox b{font:800 24px/1 var(--f-disp);color:#fff;text-shadow:0 0 12px rgba(34,211,238,.45);font-variant-numeric:tabular-nums}
 #mini{position:absolute;top:max(14px,env(safe-area-inset-top));right:max(16px,env(safe-area-inset-right));border-radius:50%;box-shadow:0 0 24px rgba(0,0,0,.5)}
 #zone{position:absolute;top:max(232px,calc(env(safe-area-inset-top) + 232px));right:max(16px,env(safe-area-inset-right));width:210px;text-align:center;font:700 22px var(--f-disp);letter-spacing:.12em;text-transform:uppercase;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.8);opacity:0}
 #zone.on{animation:zone 3s ease-out forwards}
 @keyframes zone{0%{opacity:0;transform:translateY(-6px)}12%{opacity:1;transform:none}75%{opacity:1}100%{opacity:.0}}
-#speedbox{position:absolute;right:max(16px,env(safe-area-inset-right));bottom:max(14px,env(safe-area-inset-bottom));padding:10px 16px 12px;min-width:170px}
+#speedbox{position:absolute;left:50%;transform:translateX(-50%);bottom:max(14px,env(safe-area-inset-bottom));padding:10px 16px 12px;min-width:170px}
 #speedbox .big{display:flex;align-items:baseline;gap:6px;justify-content:flex-end}
 #spd{font:800 58px/0.9 var(--f-disp);font-variant-numeric:tabular-nums;color:#fff}
 #speedbox .big span{font:600 14px var(--f-body);color:var(--mute)}
@@ -44,16 +44,16 @@ body:has(> nav) #hud{top:56px}
 #gauge .bar{height:7px;border-radius:4px;background:rgba(255,255,255,.1);overflow:hidden;margin-top:4px}
 #gauge i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#22d3ff,#a855f7);transition:width .1s}
 #gauge.act i{box-shadow:0 0 12px #22d3ff}
-#msg{position:absolute;top:80px;left:50%;transform:translate(-50%,-8px);opacity:0;transition:opacity .25s,transform .25s;font:700 22px var(--f-disp);letter-spacing:.06em;text-transform:uppercase;padding:6px 16px;border-radius:10px;background:var(--panel);border:1px solid var(--line);white-space:nowrap}
+#msg{position:absolute;top:130px;left:50%;transform:translate(-50%,-8px);opacity:0;transition:opacity .25s,transform .25s;font:700 22px var(--f-disp);letter-spacing:.06em;text-transform:uppercase;padding:6px 16px;border-radius:10px;background:var(--panel);border:1px solid var(--line);white-space:nowrap}
 #msg.on{opacity:1;transform:translate(-50%,0)}
 #trick{text-align:center;position:absolute;top:26%;left:50%;transform:translateX(-50%);opacity:0;font:800 46px var(--f-disp);letter-spacing:.04em;text-transform:uppercase;color:#fff;text-shadow:0 0 18px var(--violet),0 0 40px var(--cyan);white-space:nowrap}
 #trick.on{animation:pop 2.6s ease-out forwards}
 #tricksub{font:700 24px var(--f-disp);letter-spacing:.05em;color:#ffe08a;text-shadow:0 0 14px rgba(255,176,0,.7);margin-top:2px}
 @keyframes pop{0%{opacity:0;transform:translateX(-50%) scale(.6)}12%{opacity:1;transform:translateX(-50%) scale(1.08)}22%{transform:translateX(-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-30px)}}
-#drift{position:absolute;left:50%;bottom:max(30px,env(safe-area-inset-bottom));transform:translateX(-50%);font:800 40px var(--f-disp);letter-spacing:.06em;color:#fff;text-shadow:0 0 16px rgba(255,176,32,.8);opacity:0;transition:opacity .2s;white-space:nowrap}
+#drift{position:absolute;left:50%;bottom:140px;transform:translateX(-50%);font:800 40px var(--f-disp);letter-spacing:.06em;color:#fff;text-shadow:0 0 16px rgba(255,176,32,.8);opacity:0;transition:opacity .2s;white-space:nowrap}
 #drift.on{opacity:1}
 #drift i{font-style:normal;color:var(--accent);margin-left:10px}
-#hint{position:absolute;left:50%;top:max(14px,env(safe-area-inset-top));transform:translateX(-50%);padding:6px 14px;font-size:13px;color:#cfd6de;white-space:nowrap}
+#hint{position:absolute;left:max(16px,env(safe-area-inset-left));bottom:max(14px,env(safe-area-inset-bottom));padding:6px 14px;font-size:13px;color:#cfd6de;white-space:nowrap}
 #help{position:absolute;left:max(16px,env(safe-area-inset-left));top:230px;padding:12px 16px;max-width:min(460px,calc(100vw - 32px));max-height:calc(100vh - 260px);overflow:auto;pointer-events:auto}
 #help h3{margin:0 0 8px;font:700 17px var(--f-disp);letter-spacing:.08em;text-transform:uppercase}
 #help h3.g{margin-top:14px;color:var(--mute)}
@@ -108,7 +108,6 @@ body:has(> nav) #hud{top:56px}
 #go:hover{filter:brightness(1.08)}
 #go:focus-visible,.ghost:focus-visible,.wcard:focus-visible{outline:2px solid #fff;outline-offset:2px}
 
-#loading{position:fixed;inset:0;z-index:9;display:flex;flex-direction:column;gap:14px;align-items:center;justify-content:center;background:var(--bg);font:600 16px var(--f-body);color:var(--mute);text-align:center;padding:16px}
 .spin{width:42px;height:42px;border-radius:50%;border:3px solid rgba(255,255,255,.12);border-top-color:var(--accent);animation:sp 1s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 
@@ -116,7 +115,7 @@ body:has(> nav) #hud{top:56px}
   #mini{transform:scale(.62);transform-origin:right top}
   #zone{top:150px;width:130px;font-size:16px}
   #btns{top:170px}
-  #speedbox{transform:scale(.78);transform-origin:right bottom}
+  #speedbox{transform:translateX(-50%) scale(.78);transform-origin:center bottom}
   #hint{display:none}
   #menu h1{font-size:46px}
   #help{top:auto;bottom:120px}

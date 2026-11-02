@@ -1,5 +1,6 @@
 // Performance commune des jeux Three.js : plafond à 60 FPS et résolution adaptative (cible 30-60 FPS).
 // patch(THREE) intercepte render/setPixelRatio, que WebGLRenderer définit sur chaque instance : aucun changement dans le code des jeux.
+import { initHud } from './hud-kit.js';
 const MIN_SCALE = 0.4, MAX_FPS = 60;
 
 export function patch(T) {
@@ -19,7 +20,14 @@ export function patch(T) {
 
   wrap('render', (r, render) => (...a) => {
     const s = state(r);
+    s.raw = render;
     if (!s.started) start(r, s);
+    if (r.hudView && !s.last) { s.last = r.hudView; initHud(T, r, s); } // jeu qui rend la scène hors écran (fpv-racer) : il fournit scène et caméra
+    const [scene, cam] = a; // la scène la plus fournie rendue à l'écran sert de base à la carte du HUD commun
+    if (scene && scene.isScene && cam && cam.isPerspectiveCamera && !r.getRenderTarget() && (!s.last || scene.children.length >= s.last.scene.children.length)) {
+      s.last = { scene, camera: cam };
+      initHud(T, r, s);
+    }
     if (s.skip) return;
     return render.apply(r, a);
   });

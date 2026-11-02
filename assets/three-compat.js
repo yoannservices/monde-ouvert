@@ -44,9 +44,10 @@ const scripts = (document.querySelector('script[data-scripts]').dataset.scripts 
 for (const src of scripts) {
   await new Promise((ok, ko) => {
     const s = document.createElement('script');
+    const end = window.GameLoader && window.GameLoader.begin('Script ' + src.split('/').pop());
     s.src = new URL(src, location.href).href;
-    s.onload = ok;
-    s.onerror = () => ko(new Error('chargement impossible : ' + src));
+    s.onload = () => { if (end) end(); ok(); };
+    s.onerror = () => { const error = new Error('chargement impossible : ' + src); if (end) end(error); ko(error); };
     document.body.appendChild(s);
   });
 }
