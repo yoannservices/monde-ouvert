@@ -125,7 +125,7 @@ function heading() { return cur ? Math.atan2(_f.set(0, 0, -1).applyQuaternion(cu
 const _f = new V3(), _u = new V3(), _t = new V3(), _t2 = new V3();
 
 /* Encombrement (rayon libre nécessaire) et hauteur du centre au-dessus du sol pour chaque véhicule */
-const SPAN = { tesla: 2.3, super: 2.3, drift: 2.3, f1: 2.3, moto: 1.1, kukirin: 0.7, freestyle: 0.6, heli_small: 4.5, heli_big: 9.5, f35: 6, pv40: 18, drone: 0.4 };
+const SPAN = { tesla: 2.3, super: 2.3, flycar: 2.6, drift: 2.3, f1: 2.3, moto: 1.1, kukirin: 0.7, freestyle: 0.6, heli_small: 4.5, heli_big: 9.5, f35: 6, pv40: 18, drone: 0.4 };
 const BASE = { f35: 2.05, pv40: 3.05 };
 const FLYING = new Set(['heli', 'plane', 'drone']);
 let rising = null;

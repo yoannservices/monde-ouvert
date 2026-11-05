@@ -10,6 +10,7 @@ import { createFreestyleModel } from '../models/freestyle.js';
 import { createAircraftModels } from '../models/avions.js';
 import { createCockpitKit } from '../models/cockpit.js';
 import { Car } from './cars.js';
+import { FlyCar } from './flycar.js';
 import { Tesla } from './tesla.js';
 import { Moto, Kukirin, Freestyle } from './bikes.js';
 import { Heli } from './helis.js';
@@ -20,6 +21,7 @@ export const CATS = [
   { id: 'car', name: 'Voitures', icon: 'car', items: [
     { id: 'tesla', name: 'Tesla Roadster', desc: 'Roule sur les murs et les plafonds, propulseurs, boost et tonneaux.' },
     { id: 'super', name: 'Supercar V12', desc: '850 ch, 345 km/h, grip énorme. Frein à main pour drifter.' },
+    { id: 'flycar', name: 'Voiture volante', desc: 'Style « Let There Be Flight » : O pour voler, 3 modes (Hover & Fly, Drone, Vol).' },
     { id: 'drift', name: 'Voiture de drift', desc: 'Propulsion survireuse de Drift King : gaz et contre-braquage.' },
     { id: 'f1', name: 'Formule 1', desc: "Monoplace d'Apex GP : appui énorme, 340 km/h, freinage monstrueux." },
   ] },
@@ -118,6 +120,7 @@ export function createRoster(ctx, renderer) {
   const makers = {
     tesla: () => new Tesla(ctx, buildRoadster(THREE)),
     super: () => { const m = X.buildSupercar(); return new Car(ctx, 'super', fit(m, K.carInterior(m.body || m.root, m.cockpit))); },
+    flycar: () => { const m = X.buildFlyingCar(); return new FlyCar(ctx, fit(m, K.carInterior(m.body || m.root, m.cockpit))); },
     f1: () => { const m = X.buildSupercar(); m.cockpit = new THREE.Vector3(0, 0.95, 0.1); return new Car(ctx, 'f1', fit(m, K.carInterior(m.body || m.root, m.cockpit))); },
     drift: () => { const m = X.buildDriftCar(); return new Car(ctx, 'drift', fit(m, K.carInterior(m.body || m.root, m.cockpit))); },
     moto: () => new Moto(ctx, moto || (moto = createMotoModel(THREE, RK)), 1),

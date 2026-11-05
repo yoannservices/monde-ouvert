@@ -1,0 +1,10 @@
+import assert from 'assert';
+import fs from 'fs';
+import { MODES, nextMode, canLand } from '../js/vehicles/flycar-logic.js';
+const idx = fs.readFileSync(new URL('../js/vehicles/index.js', import.meta.url), 'utf8');
+assert(idx.includes("id: 'flycar'") && idx.includes('flycar: () =>') && idx.includes("import { FlyCar }"), 'flycar must be registered in CATS, makers and imports');
+assert(fs.readFileSync(new URL('../js/main.js', import.meta.url), 'utf8').includes('flycar: 2.6'), 'flycar SPAN missing');
+assert.equal(MODES.length, 3);
+assert.equal(nextMode(2, 1), 0); assert.equal(nextMode(0, -1), 2);
+assert(canLand(3, 0.95, 10) && !canLand(12, 1, 0) && !canLand(2, 0.3, 0) && !canLand(2, 1, 40));
+console.log('Flycar wiring and rules verified');

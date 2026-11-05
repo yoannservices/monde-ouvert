@@ -240,5 +240,28 @@ export function createExtraModels(THREE, RK) {
     return { root, inner, props };
   }
 
-  return { buildDriftCar, buildSupercar, buildHeliSmall, buildHeliBig, buildDrone };
+  /* ---------- voiture volante : supercar + 4 propulseurs rétractables ---------- */
+  function buildFlyingCar() {
+    const m = buildSupercar(), root = m.root;
+    m.mats.paint.color.setHex(0x2a63ff);
+    const housing = M.plastic(0x101216, { side: THREE.DoubleSide }), ringMat = M.glow(0x55ccff, 2.2), alu = M.alu(0x9aa0a8, { roughness: 0.3 }), arm = M.plastic(0x0d0e10);
+    const pods = [];
+    for (const [sx, z] of [[1, -1.45], [-1, -1.45], [1, 1.35], [-1, 1.35]]) {
+      const pivot = new THREE.Group(); pivot.position.set(sx * 1.3, 0.62, z); root.add(pivot);
+      A(pivot, new THREE.CylinderGeometry(0.42, 0.38, 0.2, 28, 1, true), housing, 0, 0, 0);
+      A(pivot, new THREE.TorusGeometry(0.42, 0.025, 8, 32), ringMat, 0, 0.1, 0, Math.PI / 2, 0, 0, { noShadow: true });
+      A(pivot, RK.rbox(0.5, 0.06, 0.1, 0.02, 1), arm, -sx * 0.28, 0.02, 0);
+      const fan = new THREE.Group(); fan.position.y = 0.02; pivot.add(fan);
+      for (let k = 0; k < 5; k++) { const b = new THREE.Group(); b.rotation.y = k / 5 * Math.PI * 2; fan.add(b); A(b, RK.rbox(0.34, 0.012, 0.08, 0.005, 1), alu, 0.2, 0, 0); }
+      A(fan, new THREE.CylinderGeometry(0.07, 0.07, 0.06, 12), alu, 0, 0, 0);
+      const plumeMat = new THREE.MeshBasicMaterial({ color: 0x66d4ff, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+      const plume = new THREE.Mesh(new THREE.ConeGeometry(0.36, 1.5, 20, 1, true), plumeMat);
+      plume.position.y = -0.85; plume.rotation.x = Math.PI; plume.visible = false; pivot.add(plume);
+      pods.push({ pivot, fan, plume, plumeMat, sx });
+    }
+    m.fly = { pods };
+    return m;
+  }
+
+  return { buildDriftCar, buildSupercar, buildFlyingCar, buildHeliSmall, buildHeliBig, buildDrone };
 }

@@ -45,6 +45,7 @@ export function createAudio() {
       case 'rotor': f1 = 32 + rpm * 20; f2 = 64 + rpm * 30; cut = 260 + load * 300; vol = 0.08 * rpm; lf = (a.blades || 2) * (a.rotorHz || 6) * rpm; lfd = 0.85; hiss = 0.05 * rpm + load * 0.05; hissF = 500; break;
       case 'jet': f1 = 120 + rpm * 500; f2 = 2400 + rpm * 1800; cut = 3000; vol = 0.012 + rpm * 0.02; hiss = 0.05 + rpm * 0.25 + (a.boost ? 0.25 : 0); hissF = 500 + rpm * 400; break;
       case 'prop': f1 = 70 + rpm * 60; f2 = 140 + rpm * 120; cut = 700; vol = 0.05 * Math.max(0.2, rpm); lf = 4 * 12 * Math.max(0.2, rpm); lfd = 0.4; hiss = 0.04 + rpm * 0.12; hissF = 700; break;
+      case 'flycar': f1 = 190 + rpm * 620; f2 = f1 * 1.5; cut = 1800 + rpm * 2400; vol = 0.018 + rpm * 0.03; hiss = 0.05 + rpm * 0.14; hissF = 1400; break;
       case 'drone': f1 = 260 + rpm * 900; f2 = 520 + rpm * 1500; cut = 2500 + rpm * 3000; vol = 0.012 + rpm * 0.035; hiss = rpm * 0.05; hissF = 2400; break;
     }
     if (a.boost && k !== 'jet') hiss += 0.3;

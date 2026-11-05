@@ -12,13 +12,35 @@ Maintiens **Tab** : la roue s'ouvre et le temps ralentit. Survole une catégorie
 
 | Catégorie | Véhicules |
 |---|---|
-| Voitures | Tesla Roadster (roule sur les murs et les plafonds, propulseurs, boost, figures), supercar V12 (nouveau), voiture de drift (Drift King) |
+| Voitures | Tesla Roadster (roule sur les murs et les plafonds, propulseurs, boost, figures), supercar V12 (nouveau), voiture de drift (Drift King), **voiture volante** (style mod Cyberpunk « Let There Be Flight ») |
 | Deux-roues | Ducati Panigale V4 R (Moto Rider), Kukirin G6 (dérapage, wheelie), trottinette freestyle (flips, tailwhips, barspins) |
 | Hélicoptères | Colibri (léger, 2 places), Atlas (transport, 2 pilotes + 12 places à l'arrière, vue cabine) |
 | Avions | F-35B (décollage vertical, post-combustion), PV-40 (aile basculante) |
 | Drones | Drone FPV 5" (modes Angle et Acro) |
 
-Les modèles 3D et la physique viennent des projets d'origine. Seuls la supercar et les deux hélicoptères sont nouveaux.
+Les modèles 3D et la physique viennent des projets d'origine. Seuls la supercar, les deux hélicoptères et la voiture volante sont nouveaux.
+
+## Voiture volante
+
+Inspirée du mod « Let There Be Flight » (Nexus 5208). Au sol c'est une voiture ; **O** active le vol (L3 à la manette), propulseurs animés.
+
+| Touche | Action |
+|---|---|
+| O | Voler / couper le vol ; en vol : atterrissage assisté (re-appuyer annule) |
+| G / B | Mode de vol suivant / précédent (RB / LB) |
+| Z S Q D | Avancer, reculer, tourner |
+| Espace / Ctrl | Monter / descendre (Hover & Fly) ; poussée (Drone) |
+| A / E | Glisser à gauche / droite (Hover) ; roulis (Drone) |
+| Maj | Boost (Hover) ; plus de poussée (mode Vol, Ctrl = moins) |
+| F maintenu 0,3 s | Sortir en vol (la voiture se pose) |
+| K / L / R / C | Couleur, phares, redresser, caméra (dont vue sur le toit) |
+
+- **Hover & Fly** (facile) : stabilisation automatique, la voiture reste en l'air quand on lâche tout.
+- **Drone** (avancé) : corps libre, poussée selon le haut de la voiture, rotations directes sans stabilisation.
+- **Vol** : poussée vers l'avant, portance selon la vitesse, commandes d'avion, décrochage sous ~60 km/h.
+- L'eau ramène la voiture sur la route. Pas de système de vie : les chocs ne font que du bruit et une secousse.
+- Posé doucement et à plat (moins de 9 m/s de descente), la voiture reprend ses roues toute seule.
+- Les modes autres que Hover & Fly et Drone ne sont pas décrits sur la page du mod : « Vol » est de ma conception.
 
 ## La carte
 
@@ -62,9 +84,9 @@ Il y a un cycle jour/nuit (fenêtres et lampadaires allumés la nuit). La carte 
   - `js/world/stunts.js` : parc de cascades
   - `js/world/index.js` : requêtes physiques (sol, eau, obstacles) et maillage de collision (BVH) pour la Tesla
 - **Les véhicules :**
-  - `js/vehicles/` : un fichier par famille (`cars`, `bikes`, `helis`, `planes`, `drone`)
+  - `js/vehicles/` : un fichier par famille (`cars`, `tesla`, `bikes`, `helis`, `planes`, `drone`, `flycar`) ; `flycar-logic.js` = règles pures testées par `test/flycar-check.mjs`
   - `js/vehicles/index.js` : la liste des véhicules pour la roue
-- **Les modèles 3D :** `js/models/`, repris des autres projets puis adaptés à Three.js r165
+- **Les modèles 3D :** `js/models/`, repris des autres projets puis adaptés à Three.js r186
 - **Le jeu :**
   - `js/main.js` : rendu, ciel, caméras, entrées, changement de véhicule
   - `js/wheel.js` : la roue
