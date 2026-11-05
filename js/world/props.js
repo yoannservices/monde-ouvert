@@ -103,6 +103,7 @@ export function buildProps(renderer, colliders, trees, treeSpots) {
   const nrm = new THREE.Vector3();
   const TINT_P = [0xffffff, 0xe6f0d8, 0xcfe0c0, 0xf4ffe6], TINT_L = [0xffffff, 0xe9f5c8, 0xd8eab0, 0xfff1c0, 0xf6d9a0];
   const addTree = (kind, x, z, s, y) => {
+    if (kind !== 'rock') return; // arbres, palmiers et cactus retirés (demande de Yoann)
     y = y == null ? heightAt(x, z) : y;
     const tint = kind === 'pine' ? TINT_P[(r() * 4) | 0] : kind === 'leaf' ? TINT_L[(r() * 5) | 0] : 0xffffff;
     L[kind].add(x, y - 0.2, z, r() * Math.PI * 2, s, tint);
