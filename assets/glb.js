@@ -66,6 +66,16 @@ export function fitGLB(model, length, yaw = 0, keepAxes = false) {
   return out;
 }
 
+/* Pièces instanciables d'un modèle statique : [{ geo, mat }] avec la géométrie déjà placée (centrée X/Z, posée sur y = 0, mise à l'échelle `scale`).
+   Sert aux foules et au trafic (un InstancedMesh par pièce) ; `size` est la boîte finale. */
+export function bakeParts(root, scale = 1) {
+  root.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(root), c = box.getCenter(new THREE.Vector3()), parts = [];
+  const fit = new THREE.Matrix4().makeScale(scale, scale, scale).multiply(new THREE.Matrix4().makeTranslation(-c.x, -box.min.y, -c.z));
+  root.traverse((o) => { if (o.isMesh) parts.push({ geo: o.geometry.clone().applyMatrix4(fit.clone().multiply(o.matrixWorld)), mat: o.material }); });
+  return { parts, size: box.getSize(new THREE.Vector3()).multiplyScalar(scale) };
+}
+
 /* Découpe les triangles de `root` choisis par `pick(maillage, centre)` (centre en repère monde, `root` hors scène) pour animer
    train, tuyère... d'un modèle d'un seul bloc. `pick` renvoie une clé (ou rien) ; renvoie { clé: [nouveaux maillages] }. */
 export function carve(root, pick) {

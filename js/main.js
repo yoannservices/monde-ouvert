@@ -284,6 +284,7 @@ function updateCamera(dt) {
 
 // ---------- menu, pause, carte ----------
 let started = false, paused = true;
+if (window.GP) { GP.sub = () => cur && { cat: cur.cat, id: cur.id }; GP.wheelOpen = () => wheel.isOpen; GP.air = () => !!cur && (cur.car ? !cur.car.grounded : !!(cur.s && cur.s.air)); }
 function startGame() {
   audio.init();
   paused = false; started = true;
