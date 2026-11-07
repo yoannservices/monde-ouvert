@@ -124,16 +124,13 @@ export function frameUpdate(T, scene, cam) {
 export function initPanel() {
   if (typeof document === 'undefined' || document.getElementById('q-panel')) return;
   const css = document.createElement('style');
-  css.textContent = `#q-btn{position:fixed;left:8px;bottom:8px;z-index:99998;font:600 12px Inter,system-ui,sans-serif;color:var(--ui-text,#e5e7eb);background:rgba(15,17,21,.72);border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:6px 10px;cursor:pointer;opacity:.55}
-#q-btn:hover,#q-btn:focus-visible{opacity:1}
-#q-panel{position:fixed;inset:0;z-index:100000;display:none;place-items:center;background:rgba(8,10,14,.72);font:14px Inter,system-ui,sans-serif;color:var(--ui-text,#e5e7eb)}
+  css.textContent = `#q-panel{position:fixed;inset:0;z-index:100000;display:none;place-items:center;background:rgba(8,10,14,.72);font:14px Inter,system-ui,sans-serif;color:var(--ui-text,#e5e7eb)}
 #q-panel.on{display:grid}#q-panel .q-card{width:min(460px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto;background:var(--ui-surface,#0f1115);border:1px solid rgba(255,255,255,.18);border-top:3px solid var(--ui-accent,#22c55e);border-radius:12px;padding:18px 20px}
 #q-panel h3{margin:0 0 10px;font-size:18px}#q-panel .r{display:flex;gap:6px 10px;margin:9px 0;flex-wrap:wrap;align-items:center;justify-content:space-between}#q-panel .r>span:first-child{font-weight:600}
 #q-panel button{font:inherit;color:inherit;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:6px;padding:5px 10px;cursor:pointer}
 #q-panel button.sel{background:var(--ui-accent,#22c55e);color:#04130a;border-color:transparent;font-weight:700}#q-panel small{opacity:.65;display:block;margin-top:8px;line-height:1.35}
 #q-panel .q-close{width:100%;margin-top:12px;padding:9px}`;
   document.head.appendChild(css);
-  const btn = document.createElement('button'); btn.id = 'q-btn'; btn.type = 'button'; btn.textContent = '⚙ Réglages'; btn.setAttribute('aria-label', 'Réglages graphiques');
   const p = document.createElement('div'); p.id = 'q-panel';
   const hasGuide = () => document.documentElement.dataset.guide === '1';
   const seg = (key, opts, cur) => opts.map(([v, n]) => `<button type="button" class="${String(cur) === String(v) ? 'sel' : ''}" data-k="${key}" data-v="${v}">${n}</button>`).join(' ');
@@ -156,9 +153,8 @@ ${hasGuide() ? `<div class="r"><span>Guidage de conduite</span><span>${seg('guid
     save(); draw(); dispatchEvent(new CustomEvent('gamesettings', { detail: { ...Q } }));
   });
   const open = () => { draw(); p.classList.add('on'); };
-  btn.addEventListener('click', open);
   for (const ev of ['keydown', 'keyup']) p.addEventListener(ev, e => { e.stopPropagation(); if (ev === 'keydown' && e.code === 'Escape') p.classList.remove('on'); });
-  document.body.append(btn, p);
+  document.body.append(p);
   // Flèche de guidage en haut de l'écran : arrow(rel) avec rel = angle (rad) de la cible par rapport au cap, positif = à gauche ; arrow(null) la cache.
   let ar = null;
   const arrow = rel => {
@@ -167,6 +163,18 @@ ${hasGuide() ? `<div class="r"><span>Guidage de conduite</span><span>${seg('guid
     ar.style.display = 'block'; ar.style.transform = `rotate(${-rel}rad)`;
     clearTimeout(ar._t); ar._t = setTimeout(() => { ar.style.display = 'none'; }, 250); // plus d'appel (pause, menu) : la flèche disparaît
   };
+  // Menu de pause (touche Échap ou bouton ❚❚) : un bouton « Reprendre » visible reçoit un bouton Réglages juste après lui.
+  const injectPause = () => {
+    for (const b of document.querySelectorAll('button')) {
+      if (!/^\s*(▶\s*)?Reprendre/i.test(b.textContent) || !b.getClientRects().length || b.closest('#q-panel')) continue;
+      const host = b.parentElement;
+      if (host.querySelector('.q-set') || host.closest('.hk-card')?.querySelector('.hk-set')) continue;
+      const n = b.cloneNode(false); n.className = b.className.split(' ').filter(c => !['primary', 'go', 'hk-primary'].includes(c)).join(' ').trim() + ' q-set'; n.removeAttribute('id'); n.removeAttribute('data-act'); n.removeAttribute('data-a');
+      n.textContent = '⚙ Réglages'; n.type = 'button'; n.onclick = e => { e.stopPropagation(); open(); };
+      b.after(n);
+    }
+  };
+  setInterval(injectPause, 400);
   window.GameSettings = { Q, open, close: () => p.classList.remove('on'), arrow, get guide() { return Q.guide; } };
 }
 if (typeof document !== 'undefined') { if (document.body) initPanel(); else addEventListener('DOMContentLoaded', initPanel); }
