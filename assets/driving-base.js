@@ -55,25 +55,31 @@
       const action = document.createElement('span'); action.textContent = split < 0 ? line : line.slice(split + 1).trim();
       row.append(key, action); keyList.append(row);
     }
-    brief.append(h1, desc, keyList);
+    brief.append(h1, desc);
+    // Pied de menu : bouton Réglages, puis la liste des commandes tout en bas (jamais de bouton « Touches »)
+    const foot = document.createElement('div'); foot.className = 'hk-foot';
+    const setBtn = document.createElement('button'); setBtn.type = 'button'; setBtn.className = 'hk-btn hk-set'; setBtn.textContent = '⚙ Réglages';
+    setBtn.addEventListener('click', () => window.GameSettings && window.GameSettings.open());
+    const kh = document.createElement('h3'); kh.className = 'hk-foot__title'; kh.textContent = 'Commandes';
+    foot.append(setBtn, kh, keyList);
     let seen = false, done = false;
     setInterval(() => {
       const card = document.querySelector(menuSel);
       if (!card) return;
       const shown = card.getClientRects().length > 0;
       if (shown) seen = true;
-      else if (seen && !done) { done = true; brief.remove(); }
+      else if (seen && !done) { done = true; brief.remove(); foot.remove(); }
       if (!shown) return;
       // habillage commun, y compris pour les écrans suivants du menu (garage, réglages…)
       card.classList.add('hk-card');
       if (card.parentElement && card.parentElement !== document.body) card.parentElement.classList.add('hk-scrim');
-      const acts = [...card.querySelectorAll('button')].filter(b => !b.closest('.hk-brief') && !b.parentElement.closest('[class*="grid"],[class*="opt"],[class*="seg"],[class*="tabs"],#bikes'));
+      const acts = [...card.querySelectorAll('button')].filter(b => !b.closest('.hk-brief') && !b.closest('.hk-foot') && !b.parentElement.closest('[class*="grid"],[class*="opt"],[class*="seg"],[class*="tabs"],#bikes'));
       acts.forEach(b => b.classList.add('hk-btn'));
       if (acts.length && !acts.some(b => b.classList.contains('hk-primary'))) (acts.find(b => /primary|go/.test(b.className) || b.id === 'go') || acts[0]).classList.add('hk-primary');
       if (done) return;
       const ok = !when || (when.startsWith(':scope') ? card : document).querySelector(when);
-      if (!ok) brief.remove();
-      else if (brief.parentNode !== card) card.prepend(brief);
+      if (!ok) { brief.remove(); foot.remove(); }
+      else { if (brief.parentNode !== card) card.prepend(brief); if (foot.parentNode !== card || card.lastElementChild !== foot) card.append(foot); }
     }, 150);
   }
 

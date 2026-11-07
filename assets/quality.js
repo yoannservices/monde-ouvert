@@ -1,18 +1,21 @@
 // Qualité graphique commune des jeux Three.js : distance d'affichage à 3 seuils (proche / moyen / rien), brouillard calé sur la coupure,
 // camera.far réduit, ombres plus légères ou coupées, plafond 30 FPS. Branché par perf.js (aucun changement dans le code des jeux).
 // Réglages sauvegardés dans localStorage. Échelle de distance par jeu : <html data-lod="3"> (défaut 1 ; un simulateur de vol met 8).
-const KEY = 'site.quality.v1';
+const KEY = 'site.quality.v2'; // v2 : tout le monde repart en qualité Moyen
 export const LEVELS = {
   haut: { name: 'Haut', d1: 140, d2: 700, shadow: 2048 },
   moyen: { name: 'Moyen', d1: 90, d2: 420, shadow: 1024 },
   bas: { name: 'Bas', d1: 55, d2: 240, shadow: 512 },
 };
 const ORDER = ['haut', 'moyen', 'bas'];
-export const Q = { mode: 'auto', shadows: true, fps30: false, auto: 'haut' }; // mode : auto | haut | moyen | bas ; auto = niveau choisi selon les FPS
+export const Q = { mode: 'moyen', shadows: true, fps30: false, auto: 'haut', dist: 'normal', small: true, guide: 'both' }; // mode : auto | haut | moyen | bas ; auto = niveau choisi selon les FPS
 try { Object.assign(Q, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* stockage indisponible */ }
-if (Q.mode !== 'auto' && !LEVELS[Q.mode]) Q.mode = 'auto';
+if (Q.mode !== 'auto' && !LEVELS[Q.mode]) Q.mode = 'moyen';
+const DIST = { court: 0.6, normal: 1, long: 1.6 };
+if (!DIST[Q.dist]) Q.dist = 'normal';
+if (!['both', 'haut', 'sol'].includes(Q.guide)) Q.guide = 'both';
 Q.auto = 'haut';
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ mode: Q.mode, shadows: Q.shadows, fps30: Q.fps30 })); } catch (e) { /* ignoré */ } };
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ mode: Q.mode, shadows: Q.shadows, fps30: Q.fps30, dist: Q.dist, small: Q.small, guide: Q.guide })); } catch (e) { /* ignoré */ } };
 
 export const level = () => LEVELS[Q.mode === 'auto' ? Q.auto : Q.mode];
 export const maxFps = () => (Q.fps30 ? 30 : 60);
@@ -39,7 +42,7 @@ function sphereOf(o) {
 }
 
 // Parcours (toutes les 8 images) : distance à la caméra -> proche / moyen (sans ombre projetée) / loin (masqué). Retourne le rayon du plus grand ciel détecté.
-function sweep(root, cam, d1, d2, shadowsOn, lvl) {
+function sweep(root, cam, d1, d2, shadowsOn, lvl, small) {
   const cp = cam.matrixWorld.elements; const cx = cp[12], cy = cp[13], cz = cp[14];
   let skyR = 0;
   const visit = o => {
@@ -54,7 +57,7 @@ function sweep(root, cam, d1, d2, shadowsOn, lvl) {
         const dist = Math.sqrt((px - cx) ** 2 + (py - cy) ** 2 + (pz - cz) ** 2) - r;
         if (m && (m.side === 1 || m.fog === false) && r > 100) { if (r > skyR) skyR = r; if (o.__qHid) { o.visible = true; o.__qHid = false; } }
         else if (r > 0.35 * d2) { if (o.__qHid) { o.visible = true; o.__qHid = false; } } // trop grand pour être coupé (sol, circuit, montagne)
-        else if (dist > d2) { if (!o.__qHid) { o.__qHid = true; o.visible = false; } }
+        else if (dist > d2 || (!small && r < 1 && dist > d1 * 0.6)) { if (!o.__qHid) { o.__qHid = true; o.visible = false; } }
         else {
           if (o.__qHid) { o.visible = true; o.__qHid = false; }
           if (dist > d1) { if (o.castShadow && o.__qCs === undefined) { o.__qCs = true; o.castShadow = false; } }
@@ -105,45 +108,65 @@ function applyFar(cam, d2, skyR) {
 let frame = 0, last = null;
 // Appelée par perf.js avant chaque rendu écran d'une scène avec une caméra perspective.
 export function frameUpdate(T, scene, cam) {
-  const lvl = level(), k = lodScale(), d1 = lvl.d1 * k, d2 = lvl.d2 * k;
-  const key = lvl.d2 + (Q.shadows ? 'S' : 'N');
+  const lvl = level(), k = lodScale() * DIST[Q.dist], d1 = lvl.d1 * k, d2 = lvl.d2 * k;
+  const key = lvl.d2 + Q.dist + (Q.shadows ? 'S' : 'N') + (Q.small ? 'P' : 'x');
   let skyR = scene.__qSky || 0;
   if (++frame % 8 === 0 || last !== key || scene.__qLast !== key) {
-    if (cam.matrixWorld) skyR = scene.__qSky = sweep(scene, cam, d1, d2, Q.shadows, lvl);
+    if (cam.matrixWorld) skyR = scene.__qSky = sweep(scene, cam, d1, d2, Q.shadows, lvl, Q.small);
     scene.__qLast = last = key;
   }
   applyFog(T, scene, d2);
   applyFar(cam, d2, skyR);
 }
 
-// ---------- panneau « Graphismes » (bouton en bas à gauche) ----------
+// ---------- panneau « Réglages » (bouton en bas à gauche + bouton « Réglages » des menus, via window.GameSettings.open()) ----------
+// Guidage : <html data-guide="1"> sur les jeux qui ont une aide à la conduite ; ils lisent GameSettings.guide ('haut' | 'sol' | 'both') et l'événement 'gamesettings'.
 export function initPanel() {
   if (typeof document === 'undefined' || document.getElementById('q-panel')) return;
   const css = document.createElement('style');
   css.textContent = `#q-btn{position:fixed;left:8px;bottom:8px;z-index:99998;font:600 12px Inter,system-ui,sans-serif;color:var(--ui-text,#e5e7eb);background:rgba(15,17,21,.72);border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:6px 10px;cursor:pointer;opacity:.55}
 #q-btn:hover,#q-btn:focus-visible{opacity:1}
-#q-panel{position:fixed;left:8px;bottom:44px;z-index:99999;width:min(280px,calc(100vw - 16px));font:13px Inter,system-ui,sans-serif;color:var(--ui-text,#e5e7eb);background:rgba(15,17,21,.94);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:12px;display:none}
-#q-panel.on{display:block}#q-panel h3{margin:0 0 8px;font-size:13px}#q-panel .r{display:flex;gap:6px;margin:6px 0;flex-wrap:wrap;align-items:center;justify-content:space-between}
-#q-panel button{font:inherit;color:inherit;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:6px;padding:4px 9px;cursor:pointer}
-#q-panel button.sel{background:var(--ui-accent,#22c55e);color:#04130a;border-color:transparent;font-weight:700}#q-panel small{opacity:.65;display:block;margin-top:6px;line-height:1.35}`;
+#q-panel{position:fixed;inset:0;z-index:100000;display:none;place-items:center;background:rgba(8,10,14,.72);font:14px Inter,system-ui,sans-serif;color:var(--ui-text,#e5e7eb)}
+#q-panel.on{display:grid}#q-panel .q-card{width:min(460px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto;background:var(--ui-surface,#0f1115);border:1px solid rgba(255,255,255,.18);border-top:3px solid var(--ui-accent,#22c55e);border-radius:12px;padding:18px 20px}
+#q-panel h3{margin:0 0 10px;font-size:18px}#q-panel .r{display:flex;gap:6px 10px;margin:9px 0;flex-wrap:wrap;align-items:center;justify-content:space-between}#q-panel .r>span:first-child{font-weight:600}
+#q-panel button{font:inherit;color:inherit;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:6px;padding:5px 10px;cursor:pointer}
+#q-panel button.sel{background:var(--ui-accent,#22c55e);color:#04130a;border-color:transparent;font-weight:700}#q-panel small{opacity:.65;display:block;margin-top:8px;line-height:1.35}
+#q-panel .q-close{width:100%;margin-top:12px;padding:9px}`;
   document.head.appendChild(css);
-  const btn = document.createElement('button'); btn.id = 'q-btn'; btn.type = 'button'; btn.textContent = '⚙ Graphismes'; btn.setAttribute('aria-label', 'Réglages graphiques');
+  const btn = document.createElement('button'); btn.id = 'q-btn'; btn.type = 'button'; btn.textContent = '⚙ Réglages'; btn.setAttribute('aria-label', 'Réglages graphiques');
   const p = document.createElement('div'); p.id = 'q-panel';
+  const hasGuide = () => document.documentElement.dataset.guide === '1';
+  const seg = (key, opts, cur) => opts.map(([v, n]) => `<button type="button" class="${String(cur) === String(v) ? 'sel' : ''}" data-k="${key}" data-v="${v}">${n}</button>`).join(' ');
   const draw = () => {
-    const b = (cls, label, on) => `<button type="button" class="${on ? 'sel' : ''}" data-${cls}>${label}</button>`;
-    p.innerHTML = `<h3>Graphismes</h3>
-<div class="r"><span>Qualité</span><span>${[['auto', 'Auto'], ...ORDER.map(m => [m, LEVELS[m].name])].map(([m, n]) => `<button type="button" class="${Q.mode === m ? 'sel' : ''}" data-mode="${m}">${n}</button>`).join(' ')}</span></div>
-<div class="r"><span>Ombres</span><span>${b('sh="1"', 'Oui', Q.shadows)} ${b('sh="0"', 'Non', !Q.shadows)}</span></div>
-<div class="r"><span>Limite d'images</span><span>${b('fps="60"', '60 FPS', !Q.fps30)} ${b('fps="30"', '30 FPS', Q.fps30)}</span></div>
-<small>La qualité règle la distance d'affichage (proche, moyen, rien), le brouillard, la portée de la caméra et la taille des ombres. Auto s'adapte aux FPS.${Q.mode === 'auto' ? ' Niveau actuel : ' + LEVELS[Q.auto].name + '.' : ''}</small>`;
+    p.innerHTML = `<div class="q-card"><h3>Réglages</h3>
+<div class="r"><span>Qualité graphique</span><span>${seg('mode', [['auto', 'Auto'], ...ORDER.map(m => [m, LEVELS[m].name])], Q.mode)}</span></div>
+<div class="r"><span>Ombres</span><span>${seg('shadows', [[1, 'Oui'], [0, 'Non']], +Q.shadows)}</span></div>
+<div class="r"><span>Distance d'affichage</span><span>${seg('dist', [['court', 'Courte'], ['normal', 'Normale'], ['long', 'Longue']], Q.dist)}</span></div>
+<div class="r"><span>Petits objets lointains</span><span>${seg('small', [[1, 'Oui'], [0, 'Non']], +Q.small)}</span></div>
+<div class="r"><span>Limite d'images</span><span>${seg('fps30', [[0, '60 FPS'], [1, '30 FPS']], +Q.fps30)}</span></div>
+${hasGuide() ? `<div class="r"><span>Guidage de conduite</span><span>${seg('guide', [['haut', 'Flèche en haut'], ['sol', 'Flèche au sol'], ['both', 'Les deux']], Q.guide)}</span></div>` : ''}
+<small>Auto s'adapte aux FPS${Q.mode === 'auto' ? ' (niveau actuel : ' + LEVELS[Q.auto].name + ')' : ''}. La qualité règle la distance d'affichage, le brouillard, la portée de la caméra et la taille des ombres. Réglages gardés sur cet appareil.</small>
+<button type="button" class="q-close" data-close>Fermer</button></div>`;
   };
   p.addEventListener('click', e => {
-    const t = e.target.closest('button'); if (!t) return;
-    if (t.dataset.mode) Q.mode = t.dataset.mode; else if (t.dataset.sh) Q.shadows = t.dataset.sh === '1'; else if (t.dataset.fps) Q.fps30 = t.dataset.fps === '30';
-    save(); draw();
+    if (e.target === p || e.target.closest('[data-close]')) { p.classList.remove('on'); return; }
+    const t = e.target.closest('button[data-k]'); if (!t) return;
+    const k = t.dataset.k, v = t.dataset.v;
+    if (k === 'mode' || k === 'dist' || k === 'guide') Q[k] = v; else if (k === 'shadows' || k === 'small') Q[k] = v === '1'; else Q.fps30 = v === '1';
+    save(); draw(); dispatchEvent(new CustomEvent('gamesettings', { detail: { ...Q } }));
   });
-  btn.addEventListener('click', () => { draw(); p.classList.toggle('on'); });
-  for (const ev of ['keydown', 'keyup']) p.addEventListener(ev, e => e.stopPropagation());
+  const open = () => { draw(); p.classList.add('on'); };
+  btn.addEventListener('click', open);
+  for (const ev of ['keydown', 'keyup']) p.addEventListener(ev, e => { e.stopPropagation(); if (ev === 'keydown' && e.code === 'Escape') p.classList.remove('on'); });
   document.body.append(btn, p);
+  // Flèche de guidage en haut de l'écran : arrow(rel) avec rel = angle (rad) de la cible par rapport au cap, positif = à gauche ; arrow(null) la cache.
+  let ar = null;
+  const arrow = rel => {
+    if (rel == null || Q.guide === 'sol') { if (ar) ar.style.display = 'none'; return; }
+    if (!ar) { ar = document.createElement('div'); ar.setAttribute('aria-hidden', 'true'); ar.style.cssText = 'position:fixed;top:16px;left:50%;margin-left:-26px;width:52px;height:52px;z-index:5;pointer-events:none;filter:drop-shadow(0 2px 4px #000a)'; ar.innerHTML = '<svg viewBox="0 0 64 64"><path d="M32 4 L56 30 H41 V60 H23 V30 H8 Z" fill="#22c55e" stroke="#fff" stroke-width="3" stroke-linejoin="round"/></svg>'; document.body.append(ar); }
+    ar.style.display = 'block'; ar.style.transform = `rotate(${-rel}rad)`;
+    clearTimeout(ar._t); ar._t = setTimeout(() => { ar.style.display = 'none'; }, 250); // plus d'appel (pause, menu) : la flèche disparaît
+  };
+  window.GameSettings = { Q, open, close: () => p.classList.remove('on'), arrow, get guide() { return Q.guide; } };
 }
 if (typeof document !== 'undefined') { if (document.body) initPanel(); else addEventListener('DOMContentLoaded', initPanel); }
