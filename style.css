@@ -121,3 +121,5 @@ body:has(> nav) #hud{top:56px}
   #help{top:auto;bottom:120px}
   .wcard{width:110px}.wcard img,.wcard i{width:98px;height:62px}
 }
+
+#qbtn{display:none} /* qualité : réglage commun (⚙ Réglages) */

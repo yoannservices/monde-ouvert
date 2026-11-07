@@ -13,9 +13,9 @@ try { Object.assign(Q, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (
 if (Q.mode !== 'auto' && !LEVELS[Q.mode]) Q.mode = 'moyen';
 const DIST = { court: 0.6, normal: 1, long: 1.6 };
 if (!DIST[Q.dist]) Q.dist = 'normal';
-if (!['both', 'haut', 'sol'].includes(Q.guide)) Q.guide = 'both';
+if (!['both', 'haut', 'sol', 'none'].includes(Q.guide)) Q.guide = 'both';
 Q.auto = 'haut';
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ mode: Q.mode, shadows: Q.shadows, fps30: Q.fps30, dist: Q.dist, small: Q.small, guide: Q.guide })); } catch (e) { /* ignoré */ } };
+export const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ mode: Q.mode, shadows: Q.shadows, fps30: Q.fps30, dist: Q.dist, small: Q.small, guide: Q.guide })); } catch (e) { /* ignoré */ } };
 
 export const level = () => LEVELS[Q.mode === 'auto' ? Q.auto : Q.mode];
 export const maxFps = () => (Q.fps30 ? 30 : 60);
@@ -76,7 +76,8 @@ function lightShadow(l, on, lvl) {
   else if (!l.castShadow && on && l.__qOff) { l.__qOff = false; l.castShadow = true; }
   const sh = l.shadow; if (!sh || !sh.mapSize) return;
   if (sh.__qMs === undefined) sh.__qMs = sh.mapSize.x;
-  const t = Math.min(sh.__qMs, lvl.shadow);
+  const cap = parseInt(typeof document !== 'undefined' ? document.documentElement.dataset.shadow : '') || 0; // <html data-shadow="2048"> : taille d'ombre voulue par le jeu (au lieu de celle du niveau)
+  const t = Math.min(sh.__qMs, lvl === LEVELS.bas ? lvl.shadow : cap || lvl.shadow);
   if (sh.mapSize.x !== t) { sh.mapSize.set(t, t); if (sh.map) { sh.map.dispose(); sh.map = null; } }
 }
 
@@ -132,7 +133,9 @@ export function initPanel() {
 #q-panel .q-close{width:100%;margin-top:12px;padding:9px}`;
   document.head.appendChild(css);
   const p = document.createElement('div'); p.id = 'q-panel';
-  const hasGuide = () => document.documentElement.dataset.guide === '1';
+  const hasGuide = () => ['1', 'sol'].includes(document.documentElement.dataset.guide); // 'sol' : jeu qui n'a que le tracé au sol (Rally Masters, Drift King : le virage suivant est dans leur HUD)
+  const guideOnly = () => document.documentElement.dataset.guide === 'sol';
+  const eff = () => (guideOnly() ? (Q.guide === 'none' ? 'none' : 'sol') : Q.guide); // mode réellement appliqué
   const seg = (key, opts, cur) => opts.map(([v, n]) => `<button type="button" class="${String(cur) === String(v) ? 'sel' : ''}" data-k="${key}" data-v="${v}">${n}</button>`).join(' ');
   const draw = () => {
     p.innerHTML = `<div class="q-card"><h3>Réglages</h3>
@@ -141,7 +144,7 @@ export function initPanel() {
 <div class="r"><span>Distance d'affichage</span><span>${seg('dist', [['court', 'Courte'], ['normal', 'Normale'], ['long', 'Longue']], Q.dist)}</span></div>
 <div class="r"><span>Petits objets lointains</span><span>${seg('small', [[1, 'Oui'], [0, 'Non']], +Q.small)}</span></div>
 <div class="r"><span>Limite d'images</span><span>${seg('fps30', [[0, '60 FPS'], [1, '30 FPS']], +Q.fps30)}</span></div>
-${hasGuide() ? `<div class="r"><span>Guidage de conduite</span><span>${seg('guide', [['haut', 'Flèche en haut'], ['sol', 'Flèche au sol'], ['both', 'Les deux']], Q.guide)}</span></div>` : ''}
+${hasGuide() ? `<div class="r"><span>Guidage de conduite</span><span>${seg('guide', guideOnly() ? [['sol', 'Tracé au sol'], ['none', 'Rien']] : [['haut', 'Flèche en haut'], ['sol', 'Tracé au sol'], ['both', 'Les deux'], ['none', 'Rien']], eff())}</span></div>` : ''}
 <small>Auto s'adapte aux FPS${Q.mode === 'auto' ? ' (niveau actuel : ' + LEVELS[Q.auto].name + ')' : ''}. La qualité règle la distance d'affichage, le brouillard, la portée de la caméra et la taille des ombres. Réglages gardés sur cet appareil.</small>
 <button type="button" class="q-close" data-close>Fermer</button></div>`;
   };
@@ -155,26 +158,106 @@ ${hasGuide() ? `<div class="r"><span>Guidage de conduite</span><span>${seg('guid
   const open = () => { draw(); p.classList.add('on'); };
   for (const ev of ['keydown', 'keyup']) p.addEventListener(ev, e => { e.stopPropagation(); if (ev === 'keydown' && e.code === 'Escape') p.classList.remove('on'); });
   document.body.append(p);
-  // Flèche de guidage en haut de l'écran : arrow(rel) avec rel = angle (rad) de la cible par rapport au cap, positif = à gauche ; arrow(null) la cache.
-  let ar = null;
-  const arrow = rel => {
-    if (rel == null || Q.guide === 'sol') { if (ar) ar.style.display = 'none'; return; }
-    if (!ar) { ar = document.createElement('div'); ar.setAttribute('aria-hidden', 'true'); ar.style.cssText = 'position:fixed;top:16px;left:50%;margin-left:-26px;width:52px;height:52px;z-index:5;pointer-events:none;filter:drop-shadow(0 2px 4px #000a)'; ar.innerHTML = '<svg viewBox="0 0 64 64"><path d="M32 4 L56 30 H41 V60 H23 V30 H8 Z" fill="#22c55e" stroke="#fff" stroke-width="3" stroke-linejoin="round"/></svg>'; document.body.append(ar); }
-    ar.style.display = 'block'; ar.style.transform = `rotate(${-rel}rad)`;
-    clearTimeout(ar._t); ar._t = setTimeout(() => { ar.style.display = 'none'; }, 250); // plus d'appel (pause, menu) : la flèche disparaît
+  // Guidage. arrow(rel, label) : flèche en haut de l'écran ; rel = angle (rad) de la cible par rapport au cap, positif = à gauche ; arrow(null) la cache.
+  // Visible si Guidage = « Flèche en haut » ou « Les deux ». ground(T, scene) : tracé de chevrons au sol (« Tracé au sol » ou « Les deux »).
+  let ar = null, arLbl = null;
+  const arrow = (rel, label) => {
+    if (rel == null || Q.guide === 'sol' || Q.guide === 'none') { if (ar) ar.style.display = 'none'; return; }
+    if (!ar) {
+      ar = document.createElement('div'); ar.setAttribute('aria-hidden', 'true');
+      ar.style.cssText = 'position:fixed;top:20vh;left:50%;margin-left:-30px;opacity:.92;width:60px;z-index:5;pointer-events:none;text-align:center;font:700 12px Inter,system-ui,sans-serif;color:#fff;text-shadow:0 1px 3px #000';
+      ar.innerHTML = '<svg viewBox="0 0 64 64" width="60" height="60" style="display:block;filter:drop-shadow(0 2px 4px #000a)"><path d="M32 3 L57 31 H41 V61 H23 V31 H7 Z" fill="#22c55e" stroke="#fff" stroke-width="3" stroke-linejoin="round"/></svg><span></span>';
+      arLbl = ar.querySelector('span'); ar._svg = ar.querySelector('svg'); document.body.append(ar);
+    }
+    ar.style.display = 'block'; ar._svg.style.transform = `rotate(${-rel}rad)`; arLbl.textContent = label || '';
+    clearTimeout(ar._t); ar._t = setTimeout(() => { ar.style.display = 'none'; }, 600); // plus d'appel (pause, menu) : la flèche disparaît
   };
-  // Menu de pause (touche Échap ou bouton ❚❚) : un bouton « Reprendre » visible reçoit un bouton Réglages juste après lui.
+  // Tracé au sol : T = le THREE du jeu (jamais importé ici : r149, r186 ou copie locale selon le jeu). update(pts) reçoit la ligne devant le véhicule [{x, y, z}, ...].
+  const ground = (T, scene) => {
+    const N = 30, STEP = 4;
+    const sh = new T.Shape(); sh.moveTo(-1.1, -0.5); sh.lineTo(0, 0.3); sh.lineTo(1.1, -0.5); sh.lineTo(1.1, -1); sh.lineTo(0, -0.2); sh.lineTo(-1.1, -1); sh.closePath();
+    const geo = new T.ShapeGeometry(sh).rotateX(-Math.PI / 2).translate(0, 0.12, 0);
+    const mat = new T.MeshBasicMaterial({ color: 0xffffff, transparent: true, blending: T.AdditiveBlending, depthWrite: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -8 });
+    const mesh = new T.InstancedMesh(geo, mat, N); mesh.frustumCulled = false; mesh.renderOrder = 20; mesh.userData.noLod = true; mesh.visible = false;
+    mesh.setColorAt(0, new T.Color(0, 0, 0)); scene.add(mesh);
+    const m = new T.Matrix4(), q = new T.Quaternion(), e = new T.Euler(), one = new T.Vector3(1, 1, 1), p = new T.Vector3(), c = new T.Color();
+    return {
+      mesh,
+      update(pts, t) {
+        const on = eff() === 'sol' || eff() === 'both';
+        mesh.visible = on && !!pts && pts.length > 1; if (!mesh.visible) return;
+        let seg = 0, left = 0, n = 0; // un chevron tous les STEP mètres le long de la ligne
+        while (n < N && seg < pts.length - 1) {
+          const a = pts[seg], b = pts[seg + 1], dx = b.x - a.x, dz = b.z - a.z, l = Math.hypot(dx, dz);
+          if (l < 1e-6) { seg++; continue; }
+          if (left <= l) {
+            const u = left / l; p.set(a.x + dx * u, (a.y || 0) + ((b.y || 0) - (a.y || 0)) * u, a.z + dz * u);
+            m.compose(p, q.setFromEuler(e.set(0, Math.atan2(-dx, -dz), 0)), one); mesh.setMatrixAt(n, m);
+            const k = (1 - (n / N) ** 2) * (0.65 + 0.35 * Math.sin((t || 0) * 5.5 - n * 0.9)); mesh.setColorAt(n, c.setRGB(0.05 * k, 1.0 * k, 0.3 * k)); n++; left += STEP;
+          } else { left -= l; seg++; }
+        }
+        for (; n < N; n++) { m.compose(p.set(0, -9999, 0), q.identity(), one); mesh.setMatrixAt(n, m); }
+        mesh.instanceMatrix.needsUpdate = true; if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+      },
+      dispose() { mesh.removeFromParent(); geo.dispose(); mat.dispose(); },
+    };
+  };
+  // Pied de menu commun (menus de départ ET de pause) : bouton Réglages, puis les commandes en deux blocs.
+  // data-controls (balise loader.js) : lignes « touche : action » séparées par |, une ligne « # Titre » ouvre un bloc.
+  const foot = () => {
+    const f = document.createElement('div'); f.className = 'hk-foot';
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'hk-btn hk-set'; b.textContent = '⚙ Réglages'; b.onclick = e => { e.stopPropagation(); open(); };
+    f.append(b);
+    let keys = null;
+    for (const line of ((document.querySelector('script[data-controls]') || {}).dataset?.controls || 'Commandes').split('|').filter(Boolean)) {
+      if (line.startsWith('#') || !keys) {
+        const h = document.createElement('h3'); h.className = 'hk-foot__title'; h.textContent = line.startsWith('#') ? line.slice(1).trim() : 'Commandes';
+        keys = document.createElement('div'); keys.className = 'hk-brief__keys'; f.append(h, keys); if (line.startsWith('#')) continue;
+      }
+      const i = line.indexOf(':'), row = document.createElement('div'); row.className = 'hk-brief__key';
+      const k = document.createElement('kbd'); k.textContent = i < 0 ? '' : line.slice(0, i).trim();
+      const a = document.createElement('span'); a.textContent = (i < 0 ? line : line.slice(i + 1)).trim();
+      row.append(k, a); keys.append(row);
+    }
+    return f;
+  };
+  // Menu de pause (touche Échap ou bouton ❚❚) : tout menu qui contient un bouton « Reprendre » reçoit le même cadre et le même pied (Réglages + commandes).
   const injectPause = () => {
     for (const b of document.querySelectorAll('button')) {
       if (!/^\s*(▶\s*)?Reprendre/i.test(b.textContent) || !b.getClientRects().length || b.closest('#q-panel')) continue;
-      const host = b.parentElement;
-      if (host.querySelector('.q-set') || host.closest('.hk-card')?.querySelector('.hk-set')) continue;
-      const n = b.cloneNode(false); n.className = b.className.split(' ').filter(c => !['primary', 'go', 'hk-primary'].includes(c)).join(' ').trim() + ' q-set'; n.removeAttribute('id'); n.removeAttribute('data-act'); n.removeAttribute('data-a');
-      n.textContent = '⚙ Réglages'; n.type = 'button'; n.onclick = e => { e.stopPropagation(); open(); };
-      b.after(n);
+      const card = b.closest('.hk-card,.card,.panel,.pause-panel,.in,[role=dialog]') || b.parentElement.parentElement;
+      if (!card || card.querySelector('.hk-foot')) continue;
+      card.classList.add('hk-card');
+      if (card.parentElement && card.parentElement !== document.body) card.parentElement.classList.add('hk-scrim');
+      for (const x of card.querySelectorAll('button')) if (!x.closest('.hk-foot') && !x.parentElement.closest('[class*="grid"],[class*="opt"],[class*="seg"],[class*="tabs"],nav,header')) x.classList.add('hk-btn');
+      card.append(foot());
     }
   };
-  setInterval(injectPause, 400);
-  window.GameSettings = { Q, open, close: () => p.classList.remove('on'), arrow, get guide() { return Q.guide; } };
+  const slots = () => { for (const e of document.querySelectorAll('[data-foot]')) if (!e.firstChild) e.append(foot()); }; // pages à menu fait main (FPV, Sky Pilot)
+  setInterval(() => { injectPause(); slots(); }, 400);
+  if (!document.getElementById('hk-menu-css')) document.head.append(Object.assign(document.createElement('link'), { id: 'hk-menu-css', rel: 'stylesheet', href: (import.meta.url ? new URL('game-menu.css', import.meta.url) : new URL('../../assets/game-menu.css', location.href)).href }  /* bus : bundle iife, import.meta vide */));
+  // Écran de départ commun pour les jeux sans menu de départ (<html data-start="1"> : Steep Peaks, Chantier & Carrière) : titre, description, bouton Jouer, Réglages, commandes.
+  if (document.documentElement.dataset.start === '1') {
+    const L = document.querySelector('script[data-name]') || { dataset: {} };
+    const show = () => {
+      if (document.getElementById('hk-start')) return;
+      const ov = document.createElement('div'); ov.id = 'hk-start'; ov.className = 'hk-scrim';
+      ov.style.cssText = 'position:fixed;inset:0;z-index:99990;display:grid;place-items:center;overflow:auto;padding:16px';
+      const card = document.createElement('div'); card.className = 'hk-card'; card.style.cssText = 'width:min(640px,100%);max-height:100%;overflow:auto';
+      const brief = document.createElement('div'); brief.className = 'hk-brief';
+      const h = document.createElement('h1'); h.textContent = L.dataset.name || document.title;
+      const d = document.createElement('p'); d.textContent = L.dataset.description || '';
+      brief.append(h, d);
+      const go = document.createElement('button'); go.type = 'button'; go.className = 'hk-btn hk-primary'; go.textContent = 'Jouer'; go.style.width = '100%';
+      const block = e => { if (e.code !== 'Escape') e.stopImmediatePropagation(); }; // le jeu tourne derrière : pas de touche tant que l'écran est là
+      const close = () => { ov.remove(); removeEventListener('keydown', block, true); removeEventListener('keyup', block, true); };
+      go.onclick = close;
+      card.append(brief, go, foot()); ov.append(card); document.body.append(ov);
+      addEventListener('keydown', block, true); addEventListener('keyup', block, true);
+      go.focus();
+    };
+    if (document.getElementById('game-loader')) addEventListener('game-ready', show, { once: true }); else show();
+  }
+  window.GameSettings = { Q, open, close: () => p.classList.remove('on'), arrow, ground, foot, get guide() { return eff(); } };
 }
 if (typeof document !== 'undefined') { if (document.body) initPanel(); else addEventListener('DOMContentLoaded', initPanel); }

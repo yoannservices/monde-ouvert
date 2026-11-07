@@ -47,28 +47,17 @@
     brief.className = 'hk-brief';
     const h1 = document.createElement('h1'); h1.textContent = name;
     const desc = document.createElement('p'); desc.textContent = description;
-    const keyList = document.createElement('div'); keyList.className = 'hk-brief__keys';
-    for (const line of controls) {
-      const split = line.indexOf(':');
-      const row = document.createElement('div'); row.className = 'hk-brief__key';
-      const key = document.createElement('kbd'); key.textContent = split < 0 ? '' : line.slice(0, split).trim();
-      const action = document.createElement('span'); action.textContent = split < 0 ? line : line.slice(split + 1).trim();
-      row.append(key, action); keyList.append(row);
-    }
     brief.append(h1, desc);
-    // Pied de menu : bouton Réglages, puis la liste des commandes tout en bas (jamais de bouton « Touches »)
-    const foot = document.createElement('div'); foot.className = 'hk-foot';
-    const setBtn = document.createElement('button'); setBtn.type = 'button'; setBtn.className = 'hk-btn hk-set'; setBtn.textContent = '⚙ Réglages';
-    setBtn.addEventListener('click', () => window.GameSettings && window.GameSettings.open());
-    const kh = document.createElement('h3'); kh.className = 'hk-foot__title'; kh.textContent = 'Commandes';
-    foot.append(setBtn, kh, keyList);
+    // Pied de menu (Réglages + commandes) : construit par assets/quality.js (GameSettings.foot), le même que dans les menus de pause
+    let foot = null;
+    const getFoot = () => foot || (window.GameSettings ? (foot = window.GameSettings.foot()) : null);
     let seen = false, done = false;
     setInterval(() => {
       const card = document.querySelector(menuSel);
       if (!card) return;
       const shown = card.getClientRects().length > 0;
       if (shown) seen = true;
-      else if (seen && !done) { done = true; brief.remove(); foot.remove(); }
+      else if (seen && !done) { done = true; foot?.remove(); h1.textContent = name + ' · pause'; desc.hidden = true; } // le bloc reste dans le menu (il garde masqués les titres, textes et listes de touches propres au jeu) : le menu rouvert est celui de pause
       if (!shown) return;
       // habillage commun, y compris pour les écrans suivants du menu (garage, réglages…)
       card.classList.add('hk-card');
@@ -78,8 +67,8 @@
       if (acts.length && !acts.some(b => b.classList.contains('hk-primary'))) (acts.find(b => /primary|go/.test(b.className) || b.id === 'go') || acts[0]).classList.add('hk-primary');
       if (done) return;
       const ok = !when || (when.startsWith(':scope') ? card : document).querySelector(when);
-      if (!ok) { brief.remove(); foot.remove(); }
-      else { if (brief.parentNode !== card) card.prepend(brief); if (foot.parentNode !== card || card.lastElementChild !== foot) card.append(foot); }
+      if (!ok) { brief.remove(); foot?.remove(); }
+      else { if (brief.parentNode !== card) card.prepend(brief); const ft = getFoot(); if (ft && (ft.parentNode !== card || card.lastElementChild !== ft)) card.append(ft); }
     }, 150);
   }
 
