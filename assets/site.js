@@ -51,7 +51,7 @@
     { cat: 'loisirs', path: 'loisirs/drift-king/', mini: true, name: 'Drift King',             desc: 'Drift sur une route de montagne' },
     { cat: 'loisirs', path: 'loisirs/drift-zone/', mini: true,      name: 'Drift Zone',             desc: 'Drift sur une grande plateforme 3D : combos, frôlements, 2 minutes' },
     { cat: 'loisirs', path: 'loisirs/bus-city-simulator/', mini: true, name: 'Bus City Simulator', desc: 'Simulateur de bus urbain : 5 bus, ville, lignes, horaires, économie et météo' },
-    { cat: 'loisirs', path: 'loisirs/chantier-carriere/', mini: true, name: 'Chantier & Carrière', desc: 'Prototype de chargeuse : extraction, livraisons et convoyeur automatisé' },
+    { cat: 'loisirs', path: 'loisirs/chantier-carriere/', mini: true, name: 'Chantier & Carrière', desc: 'Carrière : tir de mine, pelle, chargeuse, tombereau, bouteur, concasseur et camions clients' },
     { cat: 'loisirs', path: 'loisirs/sky-pilot/', mini: true,name: 'Sky Pilot',      desc: 'F-35B et PV-40 à aile basculante, vol libre' },
     { cat: 'loisirs', path: 'loisirs/moto-rider/', mini: true, name: 'Moto Rider',        desc: 'Moto sur route de col' },
     { cat: 'loisirs', path: 'loisirs/tesla-roadster/', mini: true, name: 'Tesla Roadster',  desc: 'Roadster 3D : murs, plafonds, vol, boost et tonneaux en ville' },
