@@ -97,7 +97,12 @@
     window.requestAnimationFrame = cb => rawRaf(t => (frozen ? heldFrames.push(cb) : cb(t)));
   }
 
-  function url(p) { return new URL(p.path.endsWith('.html') ? p.path : p.path + 'index.html', root).href; }
+  // jeux (loisirs/) : un dépôt GitHub Pages par jeu ; en local, chemins du dossier web
+  const online = /github\.io$/.test(location.hostname);
+  function url(p) {
+    if (online && p.cat === 'loisirs') return `https://yoannservices.github.io/${p.path.split('/')[1]}/`;
+    return new URL(p.path.endsWith('.html') ? p.path : p.path + 'index.html', root).href;
+  }
   function esc(s) {
     return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
