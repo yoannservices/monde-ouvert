@@ -23,7 +23,7 @@ export function patch(T) {
     const s = state(r);
     s.raw = render;
     if (!s.started) start(r, s);
-    if (r.hudView && !s.last) { s.last = r.hudView; initHud(T, r, s); globalThis.__perfView = { r, s }; } // jeu qui rend la scène hors écran (fpv-racer, tesla avec effets) : il fournit scène et caméra
+    if (r.hudView && !s.last) { s.last = r.hudView; initHud(T, r, s); } // jeu qui rend la scène hors écran (fpv-racer, tesla avec effets) : il fournit scène et caméra
     const [scene, cam] = a; // la scène la plus fournie rendue à l'écran sert de base à la carte du HUD commun
     if (scene && scene.isScene && cam && cam.isPerspectiveCamera && !r.getRenderTarget() && (!s.last || scene.children.length >= s.last.scene.children.length)) {
       s.last = { scene, camera: cam };
