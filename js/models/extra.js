@@ -209,10 +209,10 @@ export function createExtraModels(THREE, RK) {
     // rotors
     const mast = new THREE.Group(); mast.position.set(0, Y0 + 2.35, -1.8); body.add(mast);
     A(mast, new THREE.CylinderGeometry(0.32, 0.36, 0.4, 16), dark, 0, 0, 0);
-    const main = rotorBlades(mast, 5, 8.6, 0.55, blade, tip);
+    const main = rotorBlades(mast, 2, 8.6, 0.55, blade, tip);
     const tailHub = new THREE.Group(); tailHub.position.set(-0.42, Y0 + 3.0, 9.9); body.add(tailHub);
     const tr = new THREE.Group(); tr.rotation.z = Math.PI / 2; tailHub.add(tr);
-    const tail = rotorBlades(tr, 4, 1.55, 0.2, blade, null);
+    const tail = rotorBlades(tr, 2, 1.55, 0.2, blade, null);
     root.traverse(o => { if (o.isMesh && o.material !== glass) o.castShadow = true; });
     return { root, body, main, tail, mats: { paint }, cockpit: V(0.55, Y0 + 0.65, -6.85), cabin: V(-1.05, Y0 + 0.55, 0.15) };
   }

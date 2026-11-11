@@ -81,18 +81,47 @@ function optimizeModel(root) {
    len : longueur (m) ; yaw : tourne les modèles dont l'avant regarde +Z ; keep : objets à garder visibles (pilote) ; parent : où ajouter le modèle. */
 const PI = Math.PI;
 const REAL = {
-  tesla: { file: 'tesla-roadster', len: 4.3 },
-  super: { file: 'ferrari', len: 4.5 },
-  drift: { file: 'rally-subaru-impreza', len: 4.35, yaw: PI },
-  f1: { file: 'F1', len: 5.7, yaw: PI },
-  f35: { file: 'f35', len: 15.5, yaw: PI, axes: true, y: 0.9 },
-  pv40: { file: 'v22-osprey-tilt', len: 33, axes: true, y: 1.5 },
+  tesla: { file: 'tesla-roadster', len: 4.3, cams: { Cockpit: [-0.36, 0.97, 0.1] } },
+  super: { file: 'ferrari-458', len: 4.5, yaw: PI, cams: { Cockpit: [-0.38, 1.0, 0.25] } },
+  drift: { file: 'rally-subaru-impreza', len: 4.35, yaw: PI, cams: { Cockpit: [0, 1.12, -0.7, 'Capot'] } }, // modèle sans habitacle (vitres peintes) : vue capot
+  f1: { file: 'f1-lp830', len: 5.7, yaw: PI },
+  f35: { file: 'f35', len: 15.5, yaw: PI, axes: true, y: 0.9, cams: { Cockpit: [0, 3.88, -3.6] } },
+  pv40: { file: 'v22-osprey-tilt', len: 33, axes: true, y: 1.5, cams: { Cockpit: [0, 4.4, -12.2, 'Nez'] } }, // modèle sans habitacle : vue au-dessus du nez
   drone: { file: 'fpv-drone', len: 0.6, y: -0.15 },
-  heli_small: { file: 'petit helico', len: 11.86, yaw: PI, keep: (v) => [v.m.main.rot, v.m.main.disc, v.m.tail.rot, v.m.tail.disc], parent: (v) => v.m.body },
-  heli_big: { file: 'gros helico', len: 16.59, yaw: PI, keep: (v) => [v.m.main.rot, v.m.main.disc, v.m.tail.rot, v.m.tail.disc], parent: (v) => v.m.body },
+  heli_small: { file: 'mh6-little-bird', len: 9.9, yaw: PI, rotors: { main: /^helicopter\.?001/, tail: /^helicopter\.?002/, k: Math.SQRT1_2 }, cams: { Cockpit: [0.33, 1.75, -1.45], 'Place passager': [-0.33, 1.75, -1.45] }, keep: (v) => [v.m.main.rot, v.m.main.disc, v.m.tail.rot, v.m.tail.disc], parent: (v) => v.m.body },
+  heli_big: { file: 'bell-huey', len: 17.4, yaw: PI, glass: 'Glass', rotors: { main: /^Top_Rotor/, tail: /^Back_Rotor/ }, cams: { Cockpit: [0.5, 1.6, -4.2], 'Cabine (places arrière)': [0.4, 1.6, -0.6] }, keep: (v) => [v.m.main.rot, v.m.main.disc, v.m.tail.rot, v.m.tail.disc], parent: (v) => v.m.body },
   moto: { file: 'yamaha-r1', len: 2.05, yaw: PI, keep: (v) => [v.m.rider], parent: (v) => v.m.inner },
-  kukirin: { file: 'tier-scooter', len: 1.3, yaw: PI, y: -0.23, rider: [-0.06, -0.9], keep: (v) => [v.m.userData.rider, v.m.userData.displayMesh], parent: (v) => v.m.userData.tilt },
+  kukirin: { file: 'tier-scooter', len: 1.3, yaw: PI, y: -0.23, rider: [-0.06, -0.9], keep: (v) => [v.m.userData.rider, v.m.userData.displayMesh], parent: (v) => v.m.userData.tilt, after: seatScooter },
 };
+
+/* Kukirin : compteur posé sur l'écran du vrai guidon et vue pilote au-dessus de la tête (les cotes de l'ancien modèle procédural mettaient l'un et l'autre devant le guidon) */
+function seatScooter(v, wrap) {
+  const root = v.root, ud = v.m.userData; root.updateMatrixWorld(true);
+  const inv = root.matrixWorld.clone().invert(), p = new THREE.Vector3(), pts = []; let top = -9;
+  wrap.traverse((o) => { if (!o.isMesh) return; const P = o.geometry.attributes.position; for (let i = 0; i < P.count; i += 2) { p.fromBufferAttribute(P, i).applyMatrix4(o.matrixWorld).applyMatrix4(inv); if (Math.abs(p.x) < 0.05) { pts.push(p.y, p.z); if (p.y > top) top = p.y; } } });
+  let zs = 0, n = 0; for (let i = 0; i < pts.length; i += 2) if (pts[i] > top - 0.03) { zs += pts[i + 1]; n++; }
+  if (!n) return; const zc = zs / n, d = ud.displayMesh;
+  if (d) { d.position.copy(d.parent.worldToLocal(p.set(0, top - 0.008, zc).applyMatrix4(root.matrixWorld))); d.scale.setScalar(0.55); }
+  const c = v.cams.find((c) => c.type === 'attach'); if (c) { c.off.set(0, 1.8, zc + 0.38); c.tilt = -0.5; }
+}
+
+/* Hélicos : rotors du .glb masqués ; les rotors animés du jeu sont posés sur leurs moyeux et mis à leur rayon.
+   k : 0,707 quand le rotor du .glb est un carré texturé (le disque est inscrit dans le carré). */
+function seatRotors(v, wrap, rs) {
+  const body = v.m.body; body.updateMatrixWorld(true);
+  const inv = body.matrixWorld.clone().invert(), p = new THREE.Vector3();
+  for (const key of ['main', 'tail']) {
+    const pts = [], box = new THREE.Box3();
+    wrap.traverse((o) => { if (!o.isMesh || !rs[key].test(o.name)) return; o.visible = false; const P = o.geometry.attributes.position; for (let i = 0; i < P.count; i++) { pts.push(p.fromBufferAttribute(P, i).applyMatrix4(o.matrixWorld).applyMatrix4(inv).clone()); box.expandByPoint(p); } });
+    if (!pts.length) continue;
+    const c = box.getCenter(new THREE.Vector3()); let R = 0;
+    for (const q of pts) R = Math.max(R, key === 'main' ? Math.hypot(q.x - c.x, q.z - c.z) : Math.hypot(q.y - c.y, q.z - c.z));
+    const rt = v.m[key], hub = key === 'main' ? rt.rot.parent : rt.rot.parent.parent; // queue : le rotor est dans un groupe tourné de 90° sous le moyeu
+    if (key === 'main') c.y = box.max.y;
+    hub.position.copy(c);
+    const sc = R * (rs.k || 1) / rt.disc.geometry.parameters.radius; rt.rot.scale.setScalar(sc); rt.disc.scale.setScalar(sc);
+  }
+}
 
 /* Articulations des avions en un bloc : voir AIRCRAFT_RIGS dans assets/glb.js (train, tuyère). v.gear et v.nozR sont animés par planes.js. */
 export const RIGS = {
@@ -106,6 +135,12 @@ function realize(v, id) {
     const wrap = new THREE.Group(); wrap.add(f); (RIGS[id] || (() => {}))(m, wrap, v); wrap.position.y = r.y || 0;
     if (r.rider) { const rd = v.m.userData.rider; rd.position.y += r.rider[0]; rd.position.z += r.rider[1]; } // pilote calé sur le plateau et le guidon du vrai modèle
     m.purge(v.root, r.keep ? r.keep(v) : []); (r.parent ? r.parent(v) : v.root).add(wrap);
+    if (r.after) r.after(v, wrap);
+    if (r.rotors) seatRotors(v, wrap, r.rotors);
+    // caméras intérieures recalées sur le vrai modèle : [x, y, z, nouveau nom]
+    if (r.cams) for (const c of v.cams) { const o = r.cams[c.name]; if (o) { c.off.set(o[0], o[1], o[2]); if (o[3]) c.name = o[3]; } }
+    // vitrage livré opaque (textures absentes du .glb) : rendu transparent pour voir dehors depuis la cabine
+    if (r.glass) wrap.traverse((o) => { if (o.isMesh) for (const mt of [].concat(o.material)) if (mt.name === r.glass) { Object.assign(mt, { transparent: true, opacity: 0.2, depthWrite: false, needsUpdate: true }).color.set(0x9fb8c8); } });
     if (id === 'pv40') { v.nac = []; wrap.traverse((o) => { if (/^nacelle_/.test(o.name)) v.nac.push({ n: o, r: o.children.find((c) => /^rotor_/.test(c.name)), dir: o.name.endsWith('L') ? 1 : -1 }); }); }
   }).catch((e) => console.warn('Modèle réel non chargé', id, e));
 }

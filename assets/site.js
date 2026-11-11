@@ -58,6 +58,7 @@
     { cat: 'loisirs', path: 'loisirs/monde-ouvert/', mini: true, name: 'Monde Ouvert',  desc: 'Île 3D : 11 véhicules à choisir avec la roue (Tab)' },
     { cat: 'loisirs', path: 'loisirs/steep-peaks/', mini: true, name: 'Steep Peaks', desc: 'Snowboard, ski et wingsuit en monde ouvert de montagne' },
     { cat: 'loisirs', path: 'loisirs/parking-master/', mini: true, name: 'Parking Master', desc: '20 niveaux de stationnement serré, avec PNJ : ville, campagne, forêt et montagne' },
+    { cat: 'loisirs', path: 'loisirs/deneigeur/', mini: true, name: 'Déneigeur', desc: 'Déneige un quartier de montagne la nuit : pelle, fraise et quad' },
     { cat: 'loisirs', path: 'loisirs/kukirin/', mini: true,         name: 'Kukirin',                desc: 'Trottinette, livraisons et quêtes' },
     { cat: 'loisirs', path: 'loisirs/trottinette-freestyle/', mini: true, name: 'Trottinette Freestyle', desc: 'Skatepark 3D : whips, barspins, flips et grinds' },
     { cat: 'loisirs', path: 'loisirs/downhill-riders/', mini: true, name: 'Downhill Riders', desc: 'VTT de descente freestyle : pistes par graine, tricks, biomes, boutique' },

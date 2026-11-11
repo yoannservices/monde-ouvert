@@ -95,6 +95,31 @@ Il y a un cycle jour/nuit (fenêtres et lampadaires allumés la nuit). La carte 
 
 HTML, CSS et JavaScript, sans build. Three.js est chargé depuis un CDN.
 
+## Fiche technique
+
+Résumé de ce que fait le code, tenu à jour à chaque modification : le lire suffit pour vérifier une information sans relire tout le jeu.
+
+- **Code** : `js/main.js` (boucle, jour/nuit `updateDayNight`, bloom), `js/vehicles/index.js` (roster, vrais modèles `REAL`, `realize`), `js/vehicles/*.js` (physique par catégorie, listes de caméras), `js/models/*.js` (modèles procéduraux : servent encore pour les pièces animées et en attendant le .glb).
+- **Vrais modèles (`REAL`)** : `fitGLB(len, yaw)` puis purge du procédural sauf `keep`. Avant du jeu = −Z.
+
+  | Véhicule | Fichier | Longueur | Notes |
+  |---|---|---|---|
+  | tesla | `tesla-roadster` | 4,3 | Cockpit (−0,36 ; 0,97 ; 0,1) |
+  | super | `ferrari-458` | 4,5 | yaw π ; Cockpit (−0,38 ; 1,0 ; 0,25) |
+  | drift | `rally-subaru-impreza` | 4,35 | sans habitacle : vue « Capot » (0 ; 1,12 ; −0,7) |
+  | f1 | `f1-lp830` | 5,7 | yaw π |
+  | f35 | `f35` | 15,5 | Cockpit (0 ; 3,88 ; −3,6) ; train et tuyère articulés (`AIRCRAFT_RIGS`) |
+  | pv40 | `v22-osprey-tilt` | 33 | sans habitacle : vue « Nez » (0 ; 4,4 ; −12,2) ; nacelles animées |
+  | drone | `fpv-drone` | 0,6 | |
+  | heli_small (Colibri) | `mh6-little-bird` | 9,9 | rotors du .glb = carrés texturés (k = 0,707) |
+  | heli_big (Atlas) | `bell-huey` | 17,4 | vitrage `Glass` rendu transparent ; rotors procéduraux à 2 pales |
+  | moto | `yamaha-r1` | 2,05 | pilote gardé |
+  | kukirin | `tier-scooter` | 1,3 | `seatScooter` : compteur sur l'écran du guidon, vue pilote à (0 ; 1,8 ; z écran + 0,38), inclinée de −0,5 |
+- **`realize`**, dans l'ordre : `after` (réglages propres au véhicule), `seatRotors` (hélicos : rotors du .glb masqués, rotors animés posés sur leurs moyeux et mis à leur rayon), caméras recalées `cams: { nom: [x, y, z, nouveau nom] }`, vitrage `glass`.
+- **Caméras (C)** : la liste de chaque véhicule est dans `js/vehicles/*.js` (`cams`) ; types `chase` et `attach` (point du modèle).
+- **Lumière** : bloom (`UnrealBloomPass`) intensité 0,55 la nuit à 0,28 le jour ; seuil 0,92 la nuit à 3 le jour (en dessous, les façades éclairées faisaient un voile blanc). Brouillard : fin entre 2 400 et 4 200 m, début à 15 %.
+- **Sauvegarde** : `monde:vehicle` (dernier véhicule), `monde:score`.
+
 ## Crédits des modèles 3D
 
 Véhicules réels sous licence CC-BY (Sketchfab) : auteurs et licences dans `assets/models/CREDITS.md`.

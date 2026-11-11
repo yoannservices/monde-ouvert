@@ -204,6 +204,7 @@ function updateDayNight(dt, focus, alt) {
   N.lampMat.emissiveIntensity = nightF * 6;
   N.beaconMat.emissiveIntensity = (Math.sin(performance.now() / 300) > 0.2 ? 3 : 0.2) * (0.3 + nightF);
   bloom.strength = lerp(0.55, 0.28, day);
+  bloom.threshold = lerp(0.92, 3, day); // de jour les façades éclairées dépassent 0,92 : le bloom les noyait dans un voile blanc
 }
 
 // ---------- caméras ----------
@@ -410,5 +411,5 @@ function adaptResolution(dt) {
 }
 requestAnimationFrame(frame);
 window.GameLoader.ready();
-window.__monde = { get rising() { return rising; }, world, roster, K, keys, scene, camera, renderer, get cur() { return cur; }, switchVehicle, setTime: h => { timeOfDay = h; } };
+window.__monde = { get rising() { return rising; }, world, roster, K, keys, scene, camera, renderer, bloom, hemi, sun, get cur() { return cur; }, switchVehicle, setTime: h => { timeOfDay = h; } };
 
