@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { rng, canvasTexture, clamp } from '../util.js';
 import { CITY } from './terrain.js';
+import '../../../../assets/building-kit.js';
 
 const P = CITY.pitch, RW = CITY.road, Y = CITY.y, CURB = 0.2;
 export const NBX = Math.round((CITY.x1 - CITY.x0) / P), NBZ = Math.round((CITY.z1 - CITY.z0) / P);
@@ -21,57 +22,7 @@ export function curbAt(x, z) {
   return u > RW / 2 && u < P - RW / 2 && v > RW / 2 && v < P - RW / 2 ? CURB : 0;
 }
 
-function facadeTextures(style, seed) {
-  const r = rng(seed), W = 512, H = 512, cols = 8, rows = 8;
-  const base = { glass: '#2c4357', office: '#a7a29a', brick: '#8c5a46', plaster: '#d8cbb3' }[style];
-  const lit = [];
-  const map = canvasTexture(THREE, W, H, (g) => {
-    g.fillStyle = base; g.fillRect(0, 0, W, H);
-    for (let i = 0; i < 1800; i++) { g.fillStyle = `rgba(${r() < .5 ? '255,255,255' : '0,0,0'},${0.03 + r() * 0.04})`; g.fillRect(r() * W, r() * H, 3, 3); }
-    const cw = W / cols, rh = H / rows;
-    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
-      const px = x * cw, py = y * rh;
-      if (style === 'glass') {
-        const gr = g.createLinearGradient(px, py, px + cw, py + rh); gr.addColorStop(0, '#5f86a6'); gr.addColorStop(0.5, '#31506b'); gr.addColorStop(1, '#486e8d');
-        g.fillStyle = gr; g.fillRect(px + 2, py + 2, cw - 4, rh - 6);
-        g.fillStyle = '#1b2833'; g.fillRect(px, py + rh - 6, cw, 6);
-      } else {
-        g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(px + cw * 0.18, py + rh * 0.2, cw * 0.64, rh * 0.62);
-        const gr = g.createLinearGradient(px, py, px, py + rh); gr.addColorStop(0, '#6d8aa2'); gr.addColorStop(1, '#2b3a47');
-        g.fillStyle = gr; g.fillRect(px + cw * 0.2, py + rh * 0.22, cw * 0.6, rh * 0.56);
-        g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(px + cw * 0.2, py + rh * 0.76, cw * 0.6, 3);
-      }
-      lit.push(r() < 0.38 ? (r() < 0.8 ? '#ffd9a0' : '#cfe6ff') : null);
-    }
-  });
-  const emissive = canvasTexture(THREE, W / 2, H / 2, (g, w, h) => {
-    g.fillStyle = '#000'; g.fillRect(0, 0, w, h);
-    const cw = w / cols, rh = h / rows;
-    lit.forEach((c, k) => { if (!c) return; const x = k % cols, y = Math.floor(k / cols); g.fillStyle = c; g.fillRect(x * cw + cw * 0.2, y * rh + rh * 0.22, cw * 0.6, rh * 0.56); });
-  });
-  return { map, emissive };
-}
-
-/* boîte d'immeuble : murs (UV en mètres, 1 motif = 24 m) et toit séparés */
-function buildingGeos(x0, z0, x1, z1, y0, y1, tile, wallList, roofList) {
-  const w = x1 - x0, d = z1 - z0, h = y1 - y0;
-  const wall = new THREE.BoxGeometry(w, h, d);
-  const uv = wall.attributes.uv, pos = wall.attributes.position, nrm = wall.attributes.normal;
-  for (let i = 0; i < uv.count; i++) {
-    const nx = nrm.getX(i), nz = nrm.getZ(i), px = pos.getX(i), py = pos.getY(i), pz = pos.getZ(i);
-    const along = Math.abs(nx) > 0.5 ? pz : px;
-    uv.setXY(i, (along + 1000) / tile, (py + h / 2) / tile);
-  }
-  // on retire les faces haut/bas (indices 2 et 3 du BoxGeometry)
-  const idx = wall.index.array, keep = [];
-  for (let g = 0; g < 6; g++) if (g !== 2 && g !== 3) for (let k = g * 6; k < g * 6 + 6; k++) keep.push(idx[k]);
-  wall.setIndex(keep); wall.clearGroups();
-  wall.translate((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
-  wallList.push(wall.toNonIndexed());
-  const roof = new THREE.PlaneGeometry(w, d); roof.rotateX(-Math.PI / 2); roof.translate((x0 + x1) / 2, y1, (z0 + z1) / 2);
-  roofList.push(roof);
-}
-
+const LOD_NEAR = 60;   // m au-delà du bord de la tuile de bâtiments (175 m) : version détaillée en deçà
 export function buildCity(renderer, colliders, treeSpots) {
   const group = new THREE.Group(), r = rng(1234);
   const aniso = renderer.capabilities.getMaxAnisotropy();
@@ -128,26 +79,46 @@ export function buildCity(renderer, colliders, treeSpots) {
     treeSpots.push({ x, z, y: Y + CURB, kind: 'leaf', s: 0.8 + r() * 0.5 });
   }
 
-  // --- immeubles ---
-  const STYLES = ['glass', 'office', 'brick', 'plaster'];
-  const mats = {}, lists = {};
-  STYLES.forEach((s, k) => {
-    const t = facadeTextures(s, 77 + k); t.map.anisotropy = aniso;
-    mats[s] = new THREE.MeshStandardMaterial({ map: t.map, emissiveMap: t.emissive, emissive: 0xffffff, emissiveIntensity: 0, roughness: s === 'glass' ? 0.12 : 0.8, metalness: s === 'glass' ? 0.55 : 0.05, envMapIntensity: s === 'glass' ? 1.4 : 0.6 });
-    night.facadeMats.push(mats[s]); lists[s] = {};
-  });
-  const roofs = {}, beacons = [];
-  // la ville est découpée en tuiles de 200 m : une tuile hors champ ou trop loin n'est pas dessinée
+  // --- immeubles : kit commun assets/building-kit.js (fenêtres en relief, portes, vitrines, balcons, toits) ---
+  const K = BuildingKit(THREE);
+  const STY = {
+    glass: { wall: '#8a97a6', style: 'concrete', frame: '#3c4652', glass: '#5a7a96' },
+    office: { wall: '#b0aba2', style: 'stone', glass: '#2c4357', frame: '#e8e6e0' },
+    brick: { wall: '#a0634c', style: 'brick', awning: '#b3262e' },
+    plaster: { wall: '#ddd0b8', style: 'stucco', roof: 'tile' },
+  };
+  const mats = K.materials({ style: 'stucco', roof: 'tile', glass: '#3e5a70' });
+  for (const st in STY) { const m = K.materials(STY[st]); mats['wall_' + st] = m.wall; m.wall.map.anisotropy = aniso; }
+  night.facadeMats.push(mats.lit, mats.shop);
+  const opts = (style, h) => {
+    if (style === 'glass') return { fh: 3.6, gfh: 5, roof: 'flat', facade: 'curtain', cell: 2.4 };
+    if (style === 'office') return { fh: 3.5, roof: 'flat', facade: 'ribbon', shop: true, door: '-z', doorType: 'block' };
+    if (style === 'brick') { const shop = r() < 0.6; return { detail: h > 20 ? 1 : 2, fh: 3.2, roof: 'flat', shop, door: shop ? '-z' : '+z', doorType: 'block', balcony: r() < 0.4 ? 'alt' : false, win: [1.3, 1.6], awningColor: ['#b3262e', '#2b5d8a', '#2f7a4a', '#c98a1a'][Math.floor(r() * 4)] }; }
+    return h < 11 ? { fh: 3, roof: 'gable', shutters: true, quoins: r() < 0.5, win: [1.2, 1.4] } : { fh: 3, roof: 'flat', shutters: true, door: '+z', doorType: 'block', win: [1.2, 1.4] };
+  };
+  const tint = { glass: () => null, office: () => new THREE.Color().setHSL(0.1, 0.08, 0.85 + r() * 0.15), brick: () => new THREE.Color().setHSL(0.03 + r() * 0.03, 0.25, 0.8 + r() * 0.2), plaster: () => new THREE.Color().setHSL(0.08 + r() * 0.06, 0.25 + r() * 0.2, 0.86 + r() * 0.14) };
+  const accs = {}, beacons = [];
+  // la ville est découpée en tuiles de 350 m : une tuile hors champ ou trop loin n'est pas dessinée
   const TILE = 350, tk = (x, z) => Math.floor((x - CITY.x0) / TILE) + ',' + Math.floor((z - CITY.z0) / TILE);
   const tiles = [];   // { obj, x, z, near }
+  // bâtiments sur une grille plus fine (175 m) : la version détaillée ne couvre que les abords de la caméra
+  const BT = TILE / 2, btk = (x, z) => Math.floor((x - CITY.x0) / BT) + ',' + Math.floor((z - CITY.z0) / BT);
   const tileCenter = key => { const [i, j] = key.split(',').map(Number); return [CITY.x0 + (i + 0.5) * TILE, CITY.z0 + (j + 0.5) * TILE]; };
   const cx0 = (CITY.x0 + CITY.x1) / 2, cz0 = (CITY.z0 + CITY.z1) / 2;
-  const addB = (x0, z0, x1, z1, h, style) => {
-    const y0 = Y + CURB - 0.05, y1 = Y + CURB + h;
-    const key = tk((x0 + x1) / 2, (z0 + z1) / 2);
-    buildingGeos(x0, z0, x1, z1, y0, y1, 24, lists[style][key] || (lists[style][key] = []), roofs[key] || (roofs[key] = []));
+  // façade principale tournée vers le bord d'îlot le plus proche (la rue) ; emprise et collision inchangées
+  const addB = (blk, x0, z0, x1, z1, h, style) => {
+    const y0 = Y + CURB - 0.05, y1 = Y + CURB + h, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+    const side = [[cx - blk.x0, -1, 0], [blk.x1 - cx, 1, 0], [cz - blk.z0, 0, -1], [blk.z1 - cz, 0, 1]].sort((a, b) => a[0] - b[0])[0];
+    const yaw = Math.atan2(side[1], side[2]), q = side[1] !== 0;
+    // deux versions par tuile : détaillée (de près) et simplifiée (de loin : cadres et vitres en plans, ni volets ni gouttières), même tirage
+    const key = btk(cx, cz), T2 = accs[key] || (accs[key] = { near: K.acc(), far: K.acc() });
+    const o = { w: q ? z1 - z0 : x1 - x0, d: q ? x1 - x0 : z1 - z0, h: h + 0.05, tint: tint[style](), equip: true, ...opts(style, h) }, seed = Math.floor(r() * 1e9);
+    for (const [acc, det] of [[T2.near, o.detail ?? 2], [T2.far, 0]]) {
+      acc.at(cx, y0, cz, yaw).keys({ wall: 'wall_' + style });
+      K.building(acc, { ...o, detail: det, rand: rng(seed) });
+    }
     colliders.push({ x0, z0, x1, z1, y0: Y, top: y1 });
-    if (h > 110) beacons.push([(x0 + x1) / 2, y1, (z0 + z1) / 2]);
+    if (h > 110) beacons.push([cx, y1 + 0.9, cz]);
   };
   for (let i = 0; i < NBX; i++) for (let j = 0; j < NBZ; j++) {
     if (isPark(i, j)) continue;
@@ -157,33 +128,34 @@ export function buildCity(renderer, colliders, treeSpots) {
     if (roll < 0.06) continue;                                    // place / parking
     if (d < 320) {
       // centre-ville : tours
-      if (roll < 0.5) { const ins = 4 + r() * 6; addB(bx0 + ins, bz0 + ins, bx1 - ins, bz1 - ins, 90 + r() * (240 - d * 0.45), r() < 0.6 ? 'glass' : 'office'); }
-      else { const mid = (bx0 + bx1) / 2; addB(bx0, bz0 + 4, mid - 3, bz1 - 6, 60 + r() * 120, 'glass'); addB(mid + 3, bz0, bx1, bz1 - 10, 45 + r() * 90, r() < 0.5 ? 'office' : 'glass'); }
+      if (roll < 0.5) { const ins = 4 + r() * 6; addB(b, bx0 + ins, bz0 + ins, bx1 - ins, bz1 - ins, 90 + r() * (240 - d * 0.45), r() < 0.6 ? 'glass' : 'office'); }
+      else { const mid = (bx0 + bx1) / 2; addB(b, bx0, bz0 + 4, mid - 3, bz1 - 6, 60 + r() * 120, 'glass'); addB(b, mid + 3, bz0, bx1, bz1 - 10, 45 + r() * 90, r() < 0.5 ? 'office' : 'glass'); }
     } else if (d < 560) {
       const mx = (bx0 + bx1) / 2, mz = (bz0 + bz1) / 2, g = 3;
       for (const [a0, c0, a1, c1] of [[bx0, bz0, mx - g, mz - g], [mx + g, bz0, bx1, mz - g], [bx0, mz + g, mx - g, bz1], [mx + g, mz + g, bx1, bz1]]) {
         if (r() < 0.12) continue;
         const s = r() < 0.5 ? 'office' : r() < 0.6 ? 'brick' : 'glass';
-        addB(a0 + r() * 3, c0 + r() * 3, a1 - r() * 3, c1 - r() * 3, 16 + r() * 40, s);
+        addB(b, a0 + r() * 3, c0 + r() * 3, a1 - r() * 3, c1 - r() * 3, 16 + r() * 40, s);
       }
     } else {
       const n = 3, cw = (bx1 - bx0) / n, ch = (bz1 - bz0) / n;
       for (let u = 0; u < n; u++) for (let v = 0; v < n; v++) {
         if ((u === 1 && v === 1) || r() < 0.1) continue;          // cour intérieure
         const a0 = bx0 + u * cw + 2, c0 = bz0 + v * ch + 2;
-        addB(a0, c0, a0 + cw - 4 - r() * 4, c0 + ch - 4 - r() * 4, 7 + r() * 10, r() < 0.5 ? 'plaster' : 'brick');
+        addB(b, a0, c0, a0 + cw - 4 - r() * 4, c0 + ch - 4 - r() * 4, 7 + r() * 10, r() < 0.5 ? 'plaster' : 'brick');
       }
       treeSpots.push({ x: (bx0 + bx1) / 2, z: (bz0 + bz1) / 2, y: Y + CURB, kind: 'leaf', s: 1 });
     }
   }
-  for (const s of STYLES) for (const key in lists[s]) {
-    const m = new THREE.Mesh(mergeGeometries(lists[s][key]), mats[s]); m.castShadow = true; m.receiveShadow = true; group.add(m);
-    const [x, z] = tileCenter(key); tiles.push({ obj: m, x, z, near: false });
-  }
-  const roofMat = new THREE.MeshStandardMaterial({ color: 0x55575b, roughness: 0.9 });
-  for (const key in roofs) {
-    const m = new THREE.Mesh(mergeGeometries(roofs[key]), roofMat); m.receiveShadow = true; group.add(m);
-    const [x, z] = tileCenter(key); tiles.push({ obj: m, x, z, near: false });
+  for (const key in accs) {
+    const [i, j] = key.split(',').map(Number), x = CITY.x0 + (i + 0.5) * BT, z = CITY.z0 + (j + 0.5) * BT;
+    for (const lod of ['near', 'far']) {
+      const geos = accs[key][lod].geometries();
+      for (const k in geos) {
+        const m = new THREE.Mesh(geos[k], mats[k] || mats.trim); m.castShadow = BuildingKit.cast(k); m.receiveShadow = true; group.add(m);
+        tiles.push({ obj: m, x, z, near: false, lod, r: BT * 0.71 });
+      }
+    }
   }
   /* objets instanciés par tuile (lampadaires, voitures garées) : visibles seulement de près */
   const instTiles = (geo, mat, list, setter, cast) => {
@@ -262,7 +234,8 @@ export function buildCity(renderer, colliders, treeSpots) {
   return {
     group, night,
     update(cam, far) {
-      for (const t of tiles) { const d = Math.hypot(t.x - cam.x, t.z - cam.z) - 150; t.obj.visible = d < (t.near ? Math.min(far, 500) : far); }
+      // bâtiments : version détaillée à moins de LOD_NEAR m du bord de la tuile, simplifiée au-delà
+      for (const t of tiles) { const d = Math.hypot(t.x - cam.x, t.z - cam.z) - (t.r ?? 150); t.obj.visible = d < (t.near ? Math.min(far, 500) : far) && (t.lod === 'near' ? d < LOD_NEAR : t.lod === 'far' ? d >= LOD_NEAR : true); }
     },
   };
 }

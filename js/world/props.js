@@ -1,6 +1,7 @@
 /* ===== Décors : végétation, fermes, éoliennes, aéroport, village de l'île, phare, tremplins ===== */
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import '../../../../assets/building-kit.js';
 import { rng, canvasTexture, clamp, sstep, SpatialGrid, fbm } from '../util.js';
 import {
   heightAt, surfaceAt, normalAt, roadSamples, AIRPORT, ISLAND, ISLET, VILLAGE, LAKE, CITY, RAMPS, HALF,
@@ -165,15 +166,31 @@ export function buildProps(renderer, colliders, trees, treeSpots) {
   const house = (x, z, yaw, w, d, h, wallM, roofM) => { const y = heightAt(x, z); box(x, y - 0.5, z, w, h + 0.5, d, wallM, yaw); gable(x, y + h, z, w, Math.min(w, d) * 0.45, d, roofM, yaw); };
   const flatSpot = (x, z, rad) => { const h = heightAt(x, z); for (let a = 0; a < 6; a++) if (Math.abs(heightAt(x + Math.cos(a) * rad, z + Math.sin(a) * rad) - h) > 2.5) return false; return true; };
 
+  // ---------- bâtiments détaillés : kit commun assets/building-kit.js ----------
+  // Une seule accumulation pour tout le décor ; clés renommées par style (murs, toits) pour garder un matériau par style.
+  const BK = BuildingKit(THREE), kacc = BK.acc();
+  const KM = BK.materials({ style: 'stucco', roof: 'tile', glass: '#3e5a70' });
+  const kextra = { wall_wood: { style: 'wood', wall: '#b3392c' }, wall_logs: { style: 'logs', wall: '#c8a070' }, wall_metal: { style: 'metal', wall: '#c9ced3' }, wall_concrete: { style: 'concrete', wall: '#e4e6e8' },
+    roof_tin: { roof: 'tin', roofColor: '#5d646c' }, roof_slate: { roof: 'slate', roofColor: '#4f565e' }, roof_blue: { roof: 'tile', roofColor: '#2e6f8e' } };
+  for (const k in kextra) KM[k] = BK.materials(kextra[k])[k.startsWith('wall') ? 'wall' : 'roof'];
+  // maison du kit à l'emplacement d'une ancienne boîte (w le long de x, faîtage le long de z, comme gable()) ; collision identique
+  const kitHouse = (x, z, yaw, w, d, h, o = {}, keys = null) => {
+    const y = heightAt(x, z);
+    kacc.at(x, y - 0.5, z, yaw - Math.PI / 2).keys(keys);
+    BK.building(kacc, { w: d, d: w, h: h + 0.5, fh: Math.max(2.6, (h + 0.5) / Math.max(1, Math.round((h + 0.5) / 3))), plinth: 0.95, roof: 'gable', rise: Math.min(w, d) * 0.4, rand: r, ...o });
+    const c = Math.abs(Math.cos(yaw)), s = Math.abs(Math.sin(yaw)), hx = (w * c + d * s) / 2, hz = (w * s + d * c) / 2;
+    colliders.push({ x0: x - hx, z0: z - hz, x1: x + hx, z1: z + hz, y0: y - 1, top: y + h });
+  };
+
   // ---------- fermes ----------
   let farms = 0;
   for (let t = 0; t < 4000 && farms < 12; t++) {
     const x = -1800 + r() * 2700, z = 800 + r() * 1700;
     if (surfaceAt(x, z) !== S_FIELD || nearRoad(x, z, 25) || !nearRoad(x, z, 90) || !flatSpot(x, z, 30)) continue;
     const yaw = r() * Math.PI;
-    house(x, z, yaw, 10, 8, 6, M.wall, M.roof);
+    kitHouse(x, z, yaw, 10, 8, 6, { shutters: true, quoins: true, win: [1.1, 1.3] });
     const bx = x + Math.cos(yaw) * 22, bz = z - Math.sin(yaw) * 22;
-    house(bx, bz, yaw, 14, 22, 8, M.barn, M.dark);
+    kitHouse(bx, bz, yaw, 14, 22, 8, { door: false, win: [1.0, 0.8], bay: 5, lintel: false, chimney: false, gutters: false, attic: false, bands: false, openings: [{ face: '+x', s: 0, w: 5, h: 5, type: 'garage' }, { face: '-x', s: 0, w: 5, h: 5, type: 'garage' }] }, { wall: 'wall_wood', roof: 'roof_tin' });
     const sx = x - Math.sin(yaw) * 16, sz = z - Math.cos(yaw) * 16, sy = heightAt(sx, sz);
     put(new THREE.CylinderGeometry(3, 3, 16, 16).translate(sx, sy + 8, sz), M.metal); put(new THREE.SphereGeometry(3, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2).translate(sx, sy + 16, sz), M.metal);
     colliders.push({ x0: sx - 3, z0: sz - 3, x1: sx + 3, z1: sz + 3, y0: sy, top: sy + 19 });
@@ -218,8 +235,12 @@ export function buildProps(renderer, colliders, trees, treeSpots) {
   slab(1350, 300, 2050, rw.z - 96);                    // tarmac
   for (const x of [1200, 2250]) slab(x - 12, rw.z - 96, x + 12, rw.z - rw.w / 2);
   // aérogare, tour, hangars, manche à air
-  box(1700, Y, 285, 260, 14, 40, M.glass); box(1700, Y + 14, 285, 264, 1.2, 44, M.white, 0, false);
-  box(2050, Y, 300, 9, 34, 9, M.white); box(2050, Y + 34, 300, 13, 6, 13, M.glass, 0, false); box(2050, Y + 40, 300, 14, 0.8, 14, M.dark, 0, false);
+  kacc.at(1700, Y, 285, 0).keys({ wall: 'wall_concrete' }); BK.building(kacc, { w: 260, d: 40, h: 14, fh: 4.5, gfh: 5, roof: 'flat', facade: 'curtain', cell: 3, rand: r });
+  colliders.push({ x0: 1570, z0: 265, x1: 1830, z1: 305, y0: Y - 1, top: Y + 15 });
+  kacc.at(2050, Y, 300, 0).keys({ wall: 'wall_concrete' }); BK.building(kacc, { w: 9, d: 9, h: 33.4, fh: 3.4, roof: 'flat', parapet: 0.6, equip: false, door: '+z', win: [0.6, 1.2], margin: 1.6, rand: r });
+  colliders.push({ x0: 2045.5, z0: 295.5, x1: 2054.5, z1: 304.5, y0: Y - 1, top: Y + 34 });
+  box(2050, Y + 34, 300, 13, 0.5, 13, M.white, 0, false); box(2050, Y + 34.5, 300, 13, 5.5, 13, M.glass, 0, false); box(2050, Y + 40, 300, 14, 0.8, 14, M.dark, 0, false);
+  for (const [a, b] of [[-6.45, -6.45], [6.45, -6.45], [-6.45, 6.45], [6.45, 6.45]]) box(2050 + a, Y + 34.5, 300 + b, 0.25, 5.5, 0.25, M.dark, 0, false);
   for (const x of [1060, 1170, 1280]) {
     const y0 = Y, half = new THREE.CylinderGeometry(22, 22, 50, 24, 1, false, 0, Math.PI); half.rotateZ(Math.PI / 2); half.rotateY(Math.PI / 2); half.translate(x, y0, 330);
     put(half, M.metal); colliders.push({ x0: x - 22, z0: 305, x1: x + 22, z1: 355, y0, top: y0 + 20 });
@@ -232,8 +253,7 @@ export function buildProps(renderer, colliders, trees, treeSpots) {
   for (let k = 0; k < 16; k++) {
     const a = k / 16 * Math.PI * 2 + vr() * 0.3, d = 60 + vr() * 90, x = VILLAGE.x + Math.cos(a) * d, z = VILLAGE.z + Math.sin(a) * d;
     if (nearRoad(x, z, 8)) continue;
-    const wm = new THREE.MeshStandardMaterial({ color: COLS[k % COLS.length], roughness: 0.85 });
-    house(x, z, a, 8 + vr() * 5, 7 + vr() * 4, 4 + vr() * 3, wm, vr() < 0.5 ? M.roof : new THREE.MeshStandardMaterial({ color: 0x2e6f8e, roughness: 0.7 }));
+    kitHouse(x, z, a, 8 + vr() * 5, 7 + vr() * 4, 4 + vr() * 3, { tint: COLS[k % COLS.length], shutters: ['#2e6f8e', '#3f6b4a', '#8a4b3a'][k % 3], win: [1.0, 1.2] }, vr() < 0.5 ? null : { roof: 'roof_blue' });
   }
   const hpx = VILLAGE.x + 70, hpz = VILLAGE.z + 75, hpy = heightAt(hpx, hpz);
   const hpTex = canvasTexture(THREE, 256, 256, (g, w) => {
@@ -265,14 +285,20 @@ export function buildProps(renderer, colliders, trees, treeSpots) {
     const q = roadSamples.find(s => s.road.name === 'Route du désert' && s.z < -700);
     if (q) {
       const ox = q.x - q.dz * 28, oz = q.z + q.dx * 28, y = heightAt(ox, oz), yaw = Math.atan2(q.dx, q.dz);
-      box(ox, y - 0.3, oz, 18, 5, 12, M.wall, yaw);
-      box(ox - q.dx * 0, y + 5.2, oz, 22, 0.6, 16, M.red, yaw, false);
+      const bx = q.x - q.dz * 44, bz = q.z + q.dx * 44, by = heightAt(bx, bz);
+      kacc.at(bx, by - 0.3, bz, yaw + Math.PI / 2).keys(null);
+      BK.building(kacc, { w: 18, d: 12, h: 5.3, fh: 5.3, roof: 'flat', parapet: 0.6, shop: ['+z'], door: '-z', plinth: 0.6, awningColor: '#c8332a', rand: r });
+      { const c = Math.abs(Math.cos(yaw + Math.PI / 2)), sn = Math.abs(Math.sin(yaw + Math.PI / 2)); colliders.push({ x0: bx - (18 * c + 12 * sn) / 2, z0: bz - (18 * sn + 12 * c) / 2, x1: bx + (18 * c + 12 * sn) / 2, z1: bz + (18 * sn + 12 * c) / 2, y0: by - 1, top: by + 5.9 }); }
+      box(ox, y + 5.2, oz, 22, 0.6, 14, M.red, yaw, false);
+      box(ox, y + 5.05, oz, 21, 0.15, 13, M.white, yaw, false);
+      for (const [a, b] of [[-9, -5], [9, -5], [-9, 5], [9, 5]]) { const px = ox + Math.cos(yaw) * a + Math.sin(yaw) * b, pz = oz - Math.sin(yaw) * a + Math.cos(yaw) * b; box(px, y, pz, 0.4, 5.1, 0.4, M.white, yaw); }
+      for (const b of [-3, 3]) { const px = ox + Math.sin(yaw) * b, pz = oz + Math.cos(yaw) * b; box(px, y, pz, 6, 0.25, 1.2, M.white, yaw); box(px, y + 0.25, pz, 0.8, 1.7, 0.5, M.red, yaw); box(px, y + 1.2, pz + 0.001, 0.5, 0.35, 0.52, M.dark, yaw, false); }
       const sg = new THREE.BoxGeometry(6, 2, 0.4); sg.rotateY(yaw + Math.PI / 2); sg.translate(q.x - q.dz * 12, y + 7, q.z + q.dx * 12); put(sg, M.sign);
       put(new THREE.CylinderGeometry(0.2, 0.2, 7, 6).translate(q.x - q.dz * 12, y + 3, q.z + q.dx * 12), M.dark);
     }
   }
   // chalet au col
-  { const q = roadSamples.find(s => s.road.name === 'Col des Aigles' && Math.abs(s.x) < 30); if (q) house(q.x - q.dz * 24, q.z + q.dx * 24, Math.atan2(q.dx, q.dz), 12, 9, 5, M.wood, M.dark); }
+  { const q = roadSamples.find(s => s.road.name === 'Col des Aigles' && Math.abs(s.x) < 30); if (q) kitHouse(q.x - q.dz * 24, q.z + q.dx * 24, Math.atan2(q.dx, q.dz), 12, 9, 5, { shutters: '#7a3a2a', fh: 2.75, win: [1.0, 1.2] }, { wall: 'wall_logs', roof: 'roof_slate' }); }
 
   // ---------- tremplins ----------
   const rampTex = canvasTexture(THREE, 64, 256, (g, w, h) => {
@@ -290,11 +316,12 @@ export function buildProps(renderer, colliders, trees, treeSpots) {
     group.add(m);
   }
 
+  { const kg = kacc.geometries(); for (const k in kg) { const m = new THREE.Mesh(kg[k], KM[k] || KM.trim); m.castShadow = BuildingKit.cast(k); m.receiveShadow = true; group.add(m); } }
   for (const [mat, list] of parts) {
     const m = new THREE.Mesh(mergeGeometries(list.map(g => { g.deleteAttribute('uv'); return g; })), mat); m.castShadow = true; m.receiveShadow = true; group.add(m);
   }
   return {
-    group,
+    group, kitMats: KM,
     update(dt, camPos, far = 4000) {
       for (const rt of rotors) rt.rotation.z += dt * 1.1;
       for (const l of layers) l.update(camPos, l === L.rock || l === L.cactus ? Math.min(1200, far * 0.4) : far * 0.7, 380);

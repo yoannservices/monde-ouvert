@@ -48,6 +48,7 @@ export async function createWorld(renderer, progress = () => {}) {
   group.add(city.group);
   progress('Plantation des forêts…'); await tick();
   const props = buildProps(renderer, colliders, trees, treeSpots);
+  city.night.facadeMats.push(props.kitMats.lit, props.kitMats.shop);   // fenêtres des fermes, du village, de la station et de l'aéroport allumées la nuit
   group.add(props.group);
   progress('Parc de cascades…'); await tick();
   const colParts = [];
