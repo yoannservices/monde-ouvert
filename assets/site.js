@@ -5,6 +5,9 @@
    mémorise les projets récemment ouverts pour le hub.
    ═══════════════════════════════════════════════════════════ */
 
+/* Icône d'onglet commune (SVG en ligne) : sans elle, chaque page réclame /favicon.ico, absent du site (404/503). */
+if (document.head && !document.querySelector('link[rel~="icon"]')) document.head.append(Object.assign(document.createElement('link'), { rel: 'icon', href: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23101a1d'/%3E%3Cpath d='M8 22l5-12 4 8 3-5 4 9z' fill='%2375d8c0'/%3E%3C/svg%3E" }));
+
 /* Clavier AZERTY : la lettre M est sur la position physique "Semicolon" (code KeyM = la touche virgule). Les jeux lisent event.code,
    on relaie donc la lettre m comme KeyM et on ignore la touche virgule qui porte ce code. */
 (function () {
