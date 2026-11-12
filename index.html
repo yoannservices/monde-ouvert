@@ -2,12 +2,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="assets/theme.css" />
-<link rel="stylesheet" href="assets/simulateur.css" />
-<script src="assets/loader.js" data-name="Monde Ouvert" data-driving="monde-ouvert" data-menu="#menu .in" data-menu-hide=".kicker|h1|.lead|.wheelhint|.row .keys" data-description="Explore une île ouverte en voiture, moto, trottinette ou aéronef, et change de véhicule à tout moment." data-controls="# Touches de base|Z S Q D / flèches : conduire ou piloter|C : caméra|R : remettre d’aplomb|M : carte|Échap : pause|# Touches du jeu|Tab : roue des véhicules|H : commandes du véhicule|Manette : RT gaz · LT frein · stick gauche direction · stick droit caméra · A frein à main · Y caméra · X recommencer · croix haut roue des véhicules · Back carte · Start pause · voiture volante : L3 vol, RB/LB mode (avions, hélicos, drone : voir l'aide)" data-preload="../../assets/models/tesla-roadster.glb|../../assets/models/ferrari-458.glb|../../assets/models/rally-subaru-impreza.glb|../../assets/models/f1-lp830.glb|../../assets/models/f35.glb|../../assets/models/v22-osprey-tilt.glb|../../assets/models/fpv-drone.glb|../../assets/models/mh6-little-bird.glb|../../assets/models/bell-huey.glb|../../assets/models/yamaha-r1.glb|../../assets/models/tier-scooter.glb"></script>
-<script src="assets/driving-base.js"></script>
-<script src="assets/site.js" data-project="loisirs/monde-ouvert/index.html"></script>
-<script src="assets/gamepad.js" data-profile="mo"></script>
+<link rel="stylesheet" href="./assets/theme.css" />
+<link rel="stylesheet" href="./assets/simulateur.css" />
+<script src="./assets/loader.js" data-name="Monde Ouvert" data-driving="monde-ouvert" data-menu="#menu .in" data-menu-hide=".kicker|h1|.lead|.wheelhint|.row .keys" data-description="Explore une île ouverte en voiture, moto, trottinette ou aéronef, et change de véhicule à tout moment." data-controls="# Touches de base|Z S Q D / flèches : conduire ou piloter|C : caméra|R : remettre d’aplomb|M : carte|Échap : pause|# Touches du jeu|Tab : roue des véhicules|H : commandes du véhicule|Manette : RT gaz · LT frein · stick gauche direction · stick droit caméra · A frein à main · Y caméra · X recommencer · croix haut roue des véhicules · Back carte · Start pause · voiture volante : L3 vol, RB/LB mode (avions, hélicos, drone : voir l'aide)" data-preload="../../assets/models/tesla-roadster.glb|../../assets/models/ferrari-458.glb|../../assets/models/rally-subaru-impreza.glb|../../assets/models/f1-lp830.glb|../../assets/models/f35.glb|../../assets/models/v22-osprey-tilt.glb|../../assets/models/fpv-drone.glb|../../assets/models/mh6-little-bird.glb|../../assets/models/bell-huey.glb|../../assets/models/yamaha-r1.glb|../../assets/models/tier-scooter.glb"></script>
+<script src="./assets/driving-base.js"></script>
+<script src="./assets/site.js" data-project="loisirs/monde-ouvert/index.html"></script>
+<script src="./assets/gamepad.js" data-profile="mo"></script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Monde Ouvert</title>
 <meta name="description" content="Monde ouvert 3D : ville, campagne, forêt, montagnes, désert et île. Change de véhicule avec la roue (Tab) : voitures (dont une voiture volante), motos, trottinettes, hélicoptères, avions, drone.">
@@ -20,7 +20,7 @@
   "three-mesh-bvh": "https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.7.6/build/index.module.js"
 } }
 </script>
-<script type="module">import { patch } from "assets/perf.js"; import * as T from "three"; patch(T);</script>
+<script type="module">import { patch } from "./assets/perf.js"; import * as T from "three"; patch(T);</script>
 </head><body>
 <canvas id="c"></canvas>
 
