@@ -111,8 +111,8 @@ Résumé de ce que fait le code, tenu à jour à chaque modification : le lire s
   | f35 | `f35` | 15,5 | Cockpit (0 ; 3,88 ; −3,6) ; train et tuyère articulés (`AIRCRAFT_RIGS`) |
   | pv40 | `v22-osprey-tilt` | 33 | sans habitacle : vue « Nez » (0 ; 4,4 ; −12,2) ; nacelles animées |
   | drone | `fpv-drone` | 0,6 | |
-  | heli_small (Colibri) | `mh6-little-bird` | 9,9 | rotors du .glb = carrés texturés (k = 0,707) |
-  | heli_big (Atlas) | `bell-huey` | 17,4 | vitrage `Glass` rendu transparent ; rotors procéduraux à 2 pales |
+  | heli_small (Colibri) | `mh6-little-bird` | 9,9 | rotors du .glb = carrés texturés (k = 0,707) ; Cockpit (0,33 ; 1,75 ; −1,45), Place passager (−0,33 ; 1,75 ; −1,45) |
+  | heli_big (Atlas) | `bell-huey` | 17,4 | vitrage `Glass` rendu transparent ; intérieur `Huey_inside_material` (livré noir) teinté 0x5a6152 ; rotors procéduraux à 2 pales ; Cockpit (0,55 ; 2,08 ; −3,3), Cabine (0,45 ; 1,85 ; 0,2). Cotes : nez z = −5,8, plancher y ≈ 0,5, toit ≈ 2,6, tableau de bord z ≈ −4,5 |
   | moto | `yamaha-r1` | 2,05 | pilote gardé |
   | kukirin | `tier-scooter` | 1,3 | `seatScooter` : compteur sur l'écran du guidon, vue pilote à (0 ; 1,8 ; z écran + 0,38), inclinée de −0,5 |
 - **`realize`**, dans l'ordre : `after` (réglages propres au véhicule), `seatRotors` (hélicos : rotors du .glb masqués, rotors animés posés sur leurs moyeux et mis à leur rayon), caméras recalées `cams: { nom: [x, y, z, nouveau nom] }`, vitrage `glass`.

@@ -89,7 +89,9 @@ const REAL = {
   pv40: { file: 'v22-osprey-tilt', len: 33, axes: true, y: 1.5, cams: { Cockpit: [0, 4.4, -12.2, 'Nez'] } }, // modèle sans habitacle : vue au-dessus du nez
   drone: { file: 'fpv-drone', len: 0.6, y: -0.15 },
   heli_small: { file: 'mh6-little-bird', len: 9.9, yaw: PI, rotors: { main: /^helicopter\.?001/, tail: /^helicopter\.?002/, k: Math.SQRT1_2 }, cams: { Cockpit: [0.33, 1.75, -1.45], 'Place passager': [-0.33, 1.75, -1.45] }, keep: (v) => [v.m.main.rot, v.m.main.disc, v.m.tail.rot, v.m.tail.disc], parent: (v) => v.m.body },
-  heli_big: { file: 'bell-huey', len: 17.4, yaw: PI, glass: 'Glass', rotors: { main: /^Top_Rotor/, tail: /^Back_Rotor/ }, cams: { Cockpit: [0.5, 1.6, -4.2], 'Cabine (places arrière)': [0.4, 1.6, -0.6] }, keep: (v) => [v.m.main.rot, v.m.main.disc, v.m.tail.rot, v.m.tail.disc], parent: (v) => v.m.body },
+  heli_big: { file: 'bell-huey', len: 17.4, yaw: PI, glass: 'Glass', rotors: { main: /^Top_Rotor/, tail: /^Back_Rotor/ }, cams: { Cockpit: [0.55, 2.08, -3.3], 'Cabine (places arrière)': [0.45, 1.85, 0.2] },
+    // habillage intérieur livré noir pur (0x000000) : gris vert kaki pour lire le cockpit et la cabine
+    after: (v, wrap) => wrap.traverse((o) => { if (o.isMesh && o.material.name === 'Huey_inside_material') o.material.color.set(0x5a6152); }), keep: (v) => [v.m.main.rot, v.m.main.disc, v.m.tail.rot, v.m.tail.disc], parent: (v) => v.m.body },
   moto: { file: 'yamaha-r1', len: 2.05, yaw: PI, keep: (v) => [v.m.rider], parent: (v) => v.m.inner },
   kukirin: { file: 'tier-scooter', len: 1.3, yaw: PI, y: -0.23, rider: [-0.06, -0.9], keep: (v) => [v.m.userData.rider, v.m.userData.displayMesh], parent: (v) => v.m.userData.tilt, after: seatScooter },
 };

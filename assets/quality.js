@@ -63,7 +63,9 @@ function sweep(T, root, cam, d1, d2, shadowsOn, lvl, small) {
         const lod = o.userData && o.userData.lod, lc = lod && o.userData.lodC;
         if (lod && (lod === 'near') !== (Math.hypot(lc[0] - cx, lc[1] - cz) - lc[2] < (lvl.near || 0) * DIST[Q.dist])) { if (!o.__qHid) { o.__qHid = true; o.visible = false; } } // zone de ville : version détaillée de près, simplifiée de loin
         else if (m && (m.side === 1 || m.fog === false) && r > 100) { if (r > skyR) skyR = r; if (o.__qHid) { o.visible = true; o.__qHid = false; } }
-        else if (r > 0.35 * d2) { if (o.__qHid) { o.visible = true; o.__qHid = false; } } // trop grand pour être coupé (sol, circuit, montagne)
+        // trop grand pour être coupé (sol, circuit, montagne), ou déclaré toujours dessiné par le jeu (frustumCulled = false : trafic instancié, jets d'eau,
+        // particules dont la sphère, calculée une fois à vide, ne suit pas le contenu qui bouge)
+        else if (r > 0.35 * d2 || o.frustumCulled === false) { if (o.__qHid) { o.visible = true; o.__qHid = false; } }
         else if (dist > d2 || (!small && r < 1 && dist > d1 * 0.6)) { if (!o.__qHid) { o.__qHid = true; o.visible = false; } }
         else {
           if (o.__qHid) { o.visible = true; o.__qHid = false; }
@@ -308,7 +310,7 @@ ${hasGuide() ? `<div class="r"><span>Guidage de conduite</span><span>${seg('guid
   const slots = () => { for (const e of document.querySelectorAll('[data-foot]')) if (!e.firstChild) e.append(foot()); }; // pages à menu fait main (FPV, Sky Pilot)
   setInterval(() => { injectPause(); slots(); }, 400);
   if (!document.getElementById('hk-menu-css')) document.head.append(Object.assign(document.createElement('link'), { id: 'hk-menu-css', rel: 'stylesheet', href: (import.meta.url ? new URL('game-menu.css', import.meta.url) : new URL('../../assets/game-menu.css', location.href)).href }  /* bus : bundle iife, import.meta vide */));
-  // Écran de départ commun pour les jeux sans menu de départ (<html data-start="1"> : Steep Peaks, Chantier & Carrière) : titre, description, bouton Jouer, Réglages, commandes.
+  // Écran de départ commun pour les jeux sans menu de départ (<html data-start="1"> : Steep Peaks, Déneigeur) : titre, description, bouton Jouer, Réglages, commandes.
   if (document.documentElement.dataset.start === '1') {
     const L = document.querySelector('script[data-name]') || { dataset: {} };
     const show = () => {
